@@ -28,7 +28,7 @@ mod tests {
 
     #[test]
     fn puzzle_part_a() {
-        let text = read_all_text("./resources/2016/1.txt");
+        let text = read_all_text("./resources/2015/1.txt");
         assert_eq!(part_a(text), 138)
     }
 
