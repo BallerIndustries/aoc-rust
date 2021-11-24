@@ -33,14 +33,12 @@ pub fn part_b(text: String) -> i64 {
         index += 1
     }
 
-    return -1
+    panic!("Failed to reach floor -1")
 }
-
-
 
 #[cfg(test)]
 mod tests {
-    use crate::puzzle1::*;
+    use super::*;
     use crate::util::*;
 
     #[test]
