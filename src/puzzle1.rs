@@ -1,4 +1,3 @@
-use std::fs;
 
 pub fn part_a(text: String) -> i64 {
     let mut counter: i64 = 0;
@@ -15,16 +14,34 @@ pub fn part_a(text: String) -> i64 {
     return counter
 }
 
-pub fn read_all_text(filename: &str) -> String {
-    let contents = fs::read_to_string(filename)
-        .expect("Something went wrong reading the file");
-    return contents
+pub fn part_b(text: String) -> i64 {
+    let mut floor_number: i64 = 0;
+    let mut index = 1;
+
+    for (_, c) in text.chars().enumerate() {
+        if c == '(' {
+            floor_number += 1
+        }
+        else if c == ')' {
+            floor_number -= 1
+        }
+
+        if floor_number == -1 {
+            return index
+        }
+
+        index += 1
+    }
+
+    return -1
 }
+
 
 
 #[cfg(test)]
 mod tests {
     use crate::puzzle1::*;
+    use crate::util::*;
 
     #[test]
     fn puzzle_part_a() {
@@ -33,8 +50,14 @@ mod tests {
     }
 
     #[test]
+    fn puzzle_part_b() {
+        let text = read_all_text("./resources/2015/1.txt");
+        assert_eq!(part_b(text), 1771)
+    }
+
+    #[test]
     fn example_part_a() {
-        let text = String::from("(())");
+        let text = "(())".into();
         assert_eq!(part_a(text), 0)
     }
 }
