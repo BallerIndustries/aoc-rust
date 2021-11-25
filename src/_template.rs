@@ -10,7 +10,7 @@ pub fn part_b(text: String) -> String {
 mod tests {
     use super::*;
     use crate::util::*;
-    const FILENAME: String = "./resources/2015/2.txt";
+    const FILENAME: &str = "./resources/2015/2.txt";
 
     #[test]
     fn puzzle_part_a() {
