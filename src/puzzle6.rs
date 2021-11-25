@@ -1,4 +1,4 @@
-use std::cmp::{max, min};
+use std::cmp::{max};
 
 fn parse_coordinates(text: &str) -> (usize, usize) {
     let temp: Vec<&str> = text.split(",").collect();
