@@ -1,5 +1,3 @@
-use std::fmt::format;
-use md5::*;
 
 pub fn part_a(text: String) -> i32 {
     let mut counter = 0;
