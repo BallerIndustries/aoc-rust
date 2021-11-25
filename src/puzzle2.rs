@@ -59,7 +59,6 @@ pub fn part_b(text: String) -> i64 {
     }
 
     return total;
-    panic!("Not implemented")
 }
 
 #[cfg(test)]
