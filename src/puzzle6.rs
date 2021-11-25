@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 
-fn parse_coordinates(text: &str) -> (i32, i32) {
+fn parse_coordinates(text: &str) -> (usize, usize) {
     let temp: Vec<&str> = text.split(",").collect();
     return (temp[0].parse().unwrap(), temp[1].parse().unwrap())
 }
@@ -17,7 +17,7 @@ pub fn part_a(text: String) -> i32 {
 
             for x in start.0..=end.0 {
                 for y in start.1..=end.1 {
-                    lights[x as usize][y as usize] = true
+                    lights[x][y] = true
                 }
             }
         }
@@ -27,7 +27,7 @@ pub fn part_a(text: String) -> i32 {
 
             for x in start.0..=end.0 {
                 for y in start.1..=end.1 {
-                    lights[x as usize][y as usize] = false
+                    lights[x][y] = false
                 }
             }
         }
@@ -37,7 +37,7 @@ pub fn part_a(text: String) -> i32 {
 
             for x in start.0..=end.0 {
                 for y in start.1..=end.1 {
-                    lights[x as usize][y as usize] = !lights[x as usize][y as usize]
+                    lights[x][y] = !lights[x][y]
                 }
             }
         }
@@ -63,7 +63,7 @@ pub fn part_b(text: String) -> i32 {
 
             for x in start.0..=end.0 {
                 for y in start.1..=end.1 {
-                    lights[x as usize][y as usize] += 1
+                    lights[x][y] += 1
                 }
             }
         }
@@ -73,7 +73,7 @@ pub fn part_b(text: String) -> i32 {
 
             for x in start.0..=end.0 {
                 for y in start.1..=end.1 {
-                    lights[x as usize][y as usize] = max(lights[x as usize][y as usize] - 1, 0)
+                    lights[x][y] = max(lights[x][y] - 1, 0)
                 }
             }
         }
@@ -83,7 +83,7 @@ pub fn part_b(text: String) -> i32 {
 
             for x in start.0..=end.0 {
                 for y in start.1..=end.1 {
-                    lights[x as usize][y as usize] += 2
+                    lights[x][y] += 2
                 }
             }
         }
