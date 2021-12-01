@@ -10,7 +10,7 @@ pub fn part_b(text: String) -> i32 {
 mod tests {
     use super::*;
     use crate::util::*;
-    const FILENAME: &str = "./resources/2015/REPLACE_THIS_WITH_THE_RIGHT_NUMBER.txt";
+    const FILENAME: &str = "./resources/2021/REPLACE_THIS_WITH_THE_RIGHT_NUMBER.txt";
 
     #[test]
     fn puzzle_part_a() {
