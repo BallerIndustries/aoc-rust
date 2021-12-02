@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 pub fn part_a(text: String) -> i32 {
     let lines: Vec<&str> = text.lines().collect();
 
