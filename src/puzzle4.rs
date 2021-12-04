@@ -8,10 +8,10 @@ pub fn part_a(text: String) -> i32 {
     let mut boards: Vec<Vec<Vec<i32>>> = Vec::new();
 
     for index in 1..pieces.len() {
-        let boardText = pieces[index];
-        let boardLines: Vec<&str> = boardText.lines().collect();
+        let board_text = pieces[index];
+        let board_lines: Vec<&str> = board_text.lines().collect();
 
-        let board: Vec<Vec<i32>> = boardLines.iter().map(|l| {
+        let board: Vec<Vec<i32>> = board_lines.iter().map(|l| {
            l.split_whitespace().map(|t| t.parse::<i32>().unwrap()).collect()
         }).collect();
 
@@ -71,23 +71,21 @@ pub fn part_b(text: String) -> i32 {
     let mut boards: Vec<Vec<Vec<i32>>> = Vec::new();
 
     for index in 1..pieces.len() {
-        let boardText = pieces[index];
-        let boardLines: Vec<&str> = boardText.lines().collect();
+        let board_text = pieces[index];
+        let board_lines: Vec<&str> = board_text.lines().collect();
 
-        let board: Vec<Vec<i32>> = boardLines.iter().map(|l| {
+        let board: Vec<Vec<i32>> = board_lines.iter().map(|l| {
             l.split_whitespace().map(|t| t.parse::<i32>().unwrap()).collect()
         }).collect();
 
         boards.push(board);
     }
 
+    let board_len = boards.len();
+
     let mut board_indexes: HashSet<usize> = HashSet::new();
 
     for number in numbers {
-        if board_indexes.len() > 0 {
-            println!("yomama")
-        }
-
         // Zero out any matches
         for (board_index, board) in boards.iter_mut().enumerate() {
             if board_indexes.contains(&board_index) {
@@ -106,30 +104,11 @@ pub fn part_b(text: String) -> i32 {
                 board_indexes.insert(board_index);
             }
 
-            if board_indexes.len() == 100 {
+            if board_indexes.len() == board_len {
                 let unmarked_sum: i32 = board.iter().flatten().sum();
                 return unmarked_sum * number;
             }
         }
-
-        // for (pos, board) in boards.iter().enumerate() {
-        //     if has_bingo(board) {
-        //         board_indexes.insert(pos);
-        //     }
-        // }
-
-
-        // for board in &boards {
-        //     if has_bingo(board) {
-        //         boards.remove(board)
-        //     }
-        // }
-
-        // for index in 0..boards.len() {
-        //     if has_bingo(&boards[index]) {
-        //         board_indexes.insert(&index);
-        //     }
-        // }
     }
 
     panic!("Not implemented")
@@ -144,17 +123,12 @@ mod tests {
     #[test]
     fn puzzle_part_a() {
         let text = read_all_text(FILENAME);
-        assert_eq!(part_a(text), 0)
+        assert_eq!(part_a(text), 33348)
     }
 
     #[test]
     fn puzzle_part_b() {
         let text = read_all_text(FILENAME);
-        assert_eq!(part_b(text), 0)
-    }
-
-    #[test]
-    fn example_part_a() {
-        assert_eq!(part_a("".into()), 0);
+        assert_eq!(part_b(text), 8112)
     }
 }
