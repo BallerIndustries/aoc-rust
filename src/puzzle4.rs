@@ -17,6 +17,33 @@ pub fn part_a(text: String) -> i32 {
     panic!("Ruh oh")
 }
 
+pub fn part_b(text: String) -> i32 {
+    let (numbers, mut boards) = parse_text(text);
+    let board_len = boards.len();
+    let mut board_indexes: HashSet<usize> = HashSet::new();
+
+    for number in numbers {
+        for (board_index, board) in boards.iter_mut().enumerate() {
+            if board_indexes.contains(&board_index) {
+                continue
+            }
+
+            zero_out_match(number, board);
+
+            if has_bingo(board) {
+                board_indexes.insert(board_index);
+            }
+
+            if board_indexes.len() == board_len {
+                let unmarked_sum: i32 = board.iter().flatten().sum();
+                return unmarked_sum * number;
+            }
+        }
+    }
+
+    panic!("Ruh oh")
+}
+
 fn zero_out_match(number: i32, board: &mut Vec<Vec<i32>>) {
     for row in board.iter_mut() {
         for value in row.iter_mut() {
@@ -66,34 +93,6 @@ fn has_bingo(board: &Vec<Vec<i32>>) -> bool {
     }
 
     return false
-}
-
-pub fn part_b(text: String) -> i32 {
-    let (numbers, mut boards) = parse_text(text);
-    let board_len = boards.len();
-    let mut board_indexes: HashSet<usize> = HashSet::new();
-
-    for number in numbers {
-        // Zero out any matches
-        for (board_index, board) in boards.iter_mut().enumerate() {
-            if board_indexes.contains(&board_index) {
-                continue
-            }
-
-            zero_out_match(number, board);
-
-            if has_bingo(board) {
-                board_indexes.insert(board_index);
-            }
-
-            if board_indexes.len() == board_len {
-                let unmarked_sum: i32 = board.iter().flatten().sum();
-                return unmarked_sum * number;
-            }
-        }
-    }
-
-    panic!("Ruh oh")
 }
 
 #[cfg(test)]

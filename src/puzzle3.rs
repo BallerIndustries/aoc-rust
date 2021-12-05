@@ -1,6 +1,6 @@
 pub fn part_a(text: String) -> i32 {
     let lines: Vec<&str> = text.lines().collect();
-    let length = lines.get(0).unwrap().len();
+    let length = lines[0].len();
     let mut gamma_rate_str = "".to_owned();
     let mut epsilon_rate_str = "".to_owned();
 
@@ -27,97 +27,55 @@ pub fn part_a(text: String) -> i32 {
         }
     }
 
-    let gamma_rate = isize::from_str_radix(&gamma_rate_str, 2).unwrap();
-    let epsilon_rate = isize::from_str_radix(&epsilon_rate_str, 2).unwrap();
+    let gamma_rate = i32::from_str_radix(&gamma_rate_str, 2).unwrap();
+    let epsilon_rate = i32::from_str_radix(&epsilon_rate_str, 2).unwrap();
 
-    return (gamma_rate * epsilon_rate) as i32;
+    return gamma_rate * epsilon_rate;
 }
 
 pub fn part_b(text: String) -> i32 {
-    let lines: Vec<&str> = text.lines().collect();
-    let length = lines.get(0).unwrap().len();
+    let epsilon_rate = filter_down(text.lines().collect(), |zero_count: i32, one_count: i32| {
+        if one_count >= zero_count { '1' } else { '0' }
+    });
 
-    let mut oxygen_candidates: Vec<&str> = Vec::new();
-    let mut carbon_candidates: Vec<&str> = Vec::new();
+    let gamma_rate = filter_down(text.lines().collect(), |zero_count: i32, one_count: i32| {
+        if zero_count <= one_count { '0' } else { '1' }
+    });
 
-    for line in lines {
-        oxygen_candidates.push(line);
-        carbon_candidates.push(line);
-    }
+    return gamma_rate * epsilon_rate
+}
 
-    if oxygen_candidates.len() == 1 {
-        println!("oh  no")
-    }
-
-    fn is_one(candidates: &Vec<&str>) -> bool {
-        return candidates.len() == 1
-    }
-
-    fn count_zeroes(index: usize, candidates: &Vec<&str>) -> i32 {
-        let mut count = 0;
-
-        for line in candidates {
-            if line.chars().nth(index).unwrap() == '0' {
-                count += 1
-            }
-        }
-
-        return count
-    }
-
-    fn filter_candidates(
-        index: usize,
-        char_to_keep: char,
-        candidates: Vec<&str>
-    ) -> Vec<&str> {
-        let mut copy: Vec<&str> = Vec::new();
-
-        for line in candidates {
-            if line.chars().nth(index).unwrap() == char_to_keep {
-                copy.push(line)
-            }
-        }
-
-        return copy
-    }
-
+fn filter_down(mut candidates: Vec<&str>, pick_char: fn(i32, i32) -> char) -> i32 {
+    let length = candidates.len();
 
     for index in 0..length {
-        if is_one(&oxygen_candidates) {
+        if candidates.len() == 1 {
             break
         }
 
-        let zero_count = count_zeroes(index, &oxygen_candidates);
-        let one_count = (oxygen_candidates.len() as i32) - zero_count;
-
-        if one_count >= zero_count {
-            oxygen_candidates = filter_candidates(index, '1', oxygen_candidates);
-        }
-        else {
-            oxygen_candidates = filter_candidates(index, '0', oxygen_candidates);
-        }
+        let zero_count = count_zeroes(index, &candidates);
+        let one_count = (candidates.len() as i32) - zero_count;
+        let char = pick_char(zero_count, one_count);
+        candidates = filter_candidates(index, char, candidates);
     }
 
-    for index in 0..length {
-        if is_one(&carbon_candidates) {
-            break
-        }
+    return i32::from_str_radix(candidates[0], 2).unwrap();
+}
 
-        let zero_count = count_zeroes(index, &carbon_candidates);
-        let one_count = (carbon_candidates.len() as i32) - zero_count;
+fn count_zeroes(index: usize, candidates: &Vec<&str>) -> i32 {
+    return candidates.iter().filter(|line|
+        line.chars().nth(index).unwrap() == '0'
+    ).count() as i32
+}
 
-        if zero_count <= one_count {
-            carbon_candidates = filter_candidates(index, '0', carbon_candidates);
-        }
-        else {
-            carbon_candidates = filter_candidates(index, '1', carbon_candidates);
-        }
-    }
-
-    let gamma_rate = isize::from_str_radix(&carbon_candidates.get(0).unwrap(), 2).unwrap();
-    let epsilon_rate = isize::from_str_radix(&oxygen_candidates.get(0).unwrap(), 2).unwrap();
-
-    return (gamma_rate * epsilon_rate) as i32;
+fn filter_candidates(
+    index: usize,
+    char_to_keep: char,
+    candidates: Vec<&str>
+) -> Vec<&str> {
+    return candidates.iter().filter(|line| {
+        line.chars().nth(index).unwrap() == char_to_keep
+    }).map(|x| *x).collect()
 }
 
 #[cfg(test)]
