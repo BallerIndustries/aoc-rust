@@ -28,4 +28,9 @@ mod tests {
     fn example_part_a() {
         assert_eq!(part_a("".into()), 0);
     }
+
+    #[test]
+    fn example_part_b() {
+        assert_eq!(part_b("".into()), 0);
+    }
 }
