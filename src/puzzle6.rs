@@ -65,14 +65,39 @@ fn simulate(text: String, final_day: i32) -> i32 {
     }
 }
 
-pub fn count_fish(timer: i32, duration: i32) -> i32 {
+pub fn part_b(text: String) -> i64 {
+    let numbers: Vec<i64> = text.split(",").map(|x| x.parse::<i64>().unwrap()).collect();
+    let mut timer_to_count: Vec<i64> = (0..=8).map(|x| 0).collect();
 
+    for number in numbers {
+        timer_to_count[number as usize] += 1
+    }
 
-    panic!("Not done")
-}
+    let mut day_num = 1;
 
-pub fn part_b(text: String) -> i32 {
-    return simulate(text, 256);
+    while day_num <= 256 {
+        let mut counter: i32 = 8;
+        let mut copy: Vec<i64> = (0..=8).map(|x| 0).collect();
+
+        // shift timer_to_count
+        while counter >= 0 {
+            if counter > 0 {
+                copy[(counter-1) as usize] = timer_to_count[counter as usize]
+            }
+            else {
+                copy[6] = copy[6] + timer_to_count[0];
+                copy[8] = copy[8] + timer_to_count[0];
+            }
+
+            counter -= 1;
+        }
+
+        timer_to_count = copy;
+        println!("Day {} {:?}", day_num, timer_to_count);
+        day_num += 1
+    }
+
+    return timer_to_count.iter().sum();
 }
 
 #[cfg(test)]
@@ -102,6 +127,6 @@ mod tests {
 
     #[test]
     fn example_part_b() {
-        assert_eq!(part_b("".into()), 0);
+        assert_eq!(part_b("3,4,3,1,2".into()), 26984457539);
     }
 }
