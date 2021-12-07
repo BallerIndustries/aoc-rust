@@ -7,7 +7,9 @@ pub fn part_b(text: String) -> i64 {
 }
 
 fn simulate(text: String, target_day_number: i32) -> i64 {
-    let numbers: Vec<usize> = text.split(",").map(|x| x.parse::<usize>().unwrap()).collect();
+    let numbers: Vec<usize> = text.split(",")
+        .map(|x| x.parse::<usize>().unwrap())
+        .collect();
     let mut fish: Vec<i64> = vec![0i64; 9];
 
     for number in numbers {
