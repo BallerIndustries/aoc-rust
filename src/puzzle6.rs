@@ -7,36 +7,22 @@ pub fn part_b(text: String) -> i64 {
 }
 
 fn simulate(text: String, target_day_number: i32) -> i64 {
-    let numbers: Vec<i64> = text.split(",").map(|x| x.parse::<i64>().unwrap()).collect();
-    let mut timer_to_count: Vec<i64> = (0..=8).map(|_| 0).collect();
+    let numbers: Vec<usize> = text.split(",").map(|x| x.parse::<usize>().unwrap()).collect();
+    let mut fish: Vec<i64> = vec![0i64; 9];
 
     for number in numbers {
-        timer_to_count[number as usize] += 1
+        fish[number] += 1
     }
 
     let mut day_num = 1;
 
     while day_num <= target_day_number {
-        let mut counter: i32 = 8;
-        let mut copy: Vec<i64> = (0..=8).map(|_| 0).collect();
-
-        // shift timer_to_count
-        while counter >= 0 {
-            if counter > 0 {
-                copy[(counter - 1) as usize] = timer_to_count[counter as usize]
-            } else {
-                copy[6] = copy[6] + timer_to_count[0];
-                copy[8] = copy[8] + timer_to_count[0];
-            }
-
-            counter -= 1;
-        }
-
-        timer_to_count = copy;
+        fish.rotate_left(1);
+        fish[6] += fish[8];
         day_num += 1
     }
 
-    return timer_to_count.iter().sum();
+    return fish.iter().sum();
 }
 
 #[cfg(test)]
