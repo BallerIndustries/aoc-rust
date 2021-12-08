@@ -6,13 +6,8 @@ pub fn part_a(text: String) -> i32 {
     for line in text.lines() {
         let tmp: Vec<&str> = line.split(" | ").collect();
         let outputs = tmp[1].split_whitespace();
-
-        // 1, 4, 7, 8
-        // Digit 1 has 2 segments
-        // Digit 4 has 4 segments
-        // Digit 7 has 3 segments
-        // Digit 8 has 7 segments
-        let good_boys = outputs.filter(|x| x.len() == 2 || x.len() == 4 || x.len() == 3 || x.len() == 7)
+        let good_boys = outputs
+            .filter(|x| x.len() == 2 || x.len() == 4 || x.len() == 3 || x.len() == 7)
             .count();
         counter += good_boys as i32;
     }
@@ -21,36 +16,6 @@ pub fn part_a(text: String) -> i32 {
 }
 
 pub fn part_b(text: String) -> i64 {
-    // AMBIGUOUS
-    // Digit 0 has 6 segments
-    // Digit 9 has 6 segments
-    // Digit 6 has 6 segments
-
-    // AMBIGUOUS
-    // Digit 2 has 5 segments
-    // Digit 3 has 5 segments
-    // Digit 5 has 5 segments
-
-    // UNIQUE
-    // Digit 1 has 2 segments
-    // Digit 4 has 4 segments
-    // Digit 7 has 3 segments
-    // Digit 8 has 7 segments
-
-    // Thinking: If you get four of the same digits with 5/6 segments it is impossible to determine the digit
-    // Thinking: If you get a digit with (2,4,3,7) segments, you can uniquely identify them
-    let mut normal_digit_to_segments: HashMap<i32, Vec<char>> = HashMap::new();
-    normal_digit_to_segments.insert(0, vec!['a', 'b', 'c', 'e', 'f', 'g']);
-    normal_digit_to_segments.insert(1, vec!['c', 'f']);
-    normal_digit_to_segments.insert(2, vec!['a', 'c', 'd', 'e', 'f', 'g']);
-    normal_digit_to_segments.insert(3, vec!['a', 'c', 'd', 'f', 'g']);
-    normal_digit_to_segments.insert(4, vec!['b', 'c', 'd', 'f']);
-    normal_digit_to_segments.insert(5, vec!['a', 'b', 'd', 'f', 'g']);
-    normal_digit_to_segments.insert(6, vec!['a', 'b', 'd', 'e', 'f', 'g']);
-    normal_digit_to_segments.insert(7, vec!['a', 'c', 'f']);
-    normal_digit_to_segments.insert(8, vec!['a', 'b', 'c', 'd', 'e', 'f', 'g']);
-    normal_digit_to_segments.insert(9, vec!['a', 'b', 'c', 'd', 'f', 'g']);
-
     let mut total = 0i64;
 
     for line in text.lines() {
@@ -99,18 +64,9 @@ pub fn part_b(text: String) -> i64 {
 
         verify_known_digits(&known_digits);
 
-
-
-
         let mut crazy_horse: HashMap<String, i32> = HashMap::new();
 
         for (key, characters) in known_digits {
-            // let mut buffer = String::from("");
-            //
-            // for char in characters {
-            //     buffer.push(char);
-            // }
-
             let mut cheese: Vec<char> = characters.iter().map(|x| *x).collect();
             cheese.sort();
             let string = cheese.into_iter().collect::<String>();
@@ -127,34 +83,9 @@ pub fn part_b(text: String) -> i64 {
 
         let final_result = telephone.into_iter().collect::<String>().parse::<i64>().unwrap();
         total += final_result;
-
-
-        // // We can determine A by finding the char in '7' that is not in '1'
-        // for key_a in 0..=9 {
-        //     for key_b  in 0..=9 {
-        //         if key_a == key_b {
-        //             continue
-        //         }
-        //
-        //         let _key_a_segments = known_digits.get(&key_a);
-        //         let _key_b_segments = known_digits.get(&key_b);
-        //
-        //         if let (Some(key_a_segment), Some(key_b_segment)) = (_key_a_segments, _key_b_segments) {
-        //             let difference = diff(key_a_segment, key_b_segment);
-        //
-        //             if difference.len() == 1 {
-        //                 let normal_difference = diff(normal_digit_to_segments.get(&key_a).unwrap(), normal_digit_to_segments.get(&key_b).unwrap());
-        //                 segment_mapping.insert(difference[0], normal_difference[0]);
-        //                 println!("kaboom");
-        //             }
-        //         }
-        //     }
-        // }
     }
 
     return total;
-    // println!("WIP");
-    // panic!("Not implemented")
 }
 
 fn verify_known_digits(known_digits: &HashMap<i32, Vec<char>>) {
@@ -194,8 +125,8 @@ fn figure_out_digit_0(tmp: &Vec<&str>, known_digits: &mut HashMap<i32, Vec<char>
     let four_segments = known_digits.get(&4).unwrap();
 
     let octopus: &str = six_segmenters.iter().filter(|x| {
-        let list_b = four_segments;
         let list_a = &x.chars().collect();
+        let list_b = four_segments;
         let result = in_a_missing_from_b(list_a, list_b);
         return result.len() == 3 && not_known(x.chars().collect(), known_digits);
     }).collect::<Vec<&&str>>()[0];
@@ -262,17 +193,11 @@ fn figure_out_digit_5(tmp: &Vec<&str>, known_digits: &mut HashMap<i32, Vec<char>
 fn not_known(candidate: Vec<char>, known_digits: &HashMap<i32, Vec<char>>) -> bool {
     for value in known_digits.values().into_iter() {
         if candidate == *value {
-            //println!("{:?}", value);
             return false
         }
     }
 
     return true
-
-
-    // let vec: Vec<Vec<char>> = known_digits.values().clone().map(|x| *x).collect();
-    // return vec.contains(&candidate);
-    //return *vec.contains(candidate);
 }
 
 fn in_a_missing_from_b(list_a: &Vec<char>, list_b: &Vec<char>) -> Vec<char> {
