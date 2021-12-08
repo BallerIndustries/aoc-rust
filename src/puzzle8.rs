@@ -165,8 +165,8 @@ fn verify_known_digits(known_digits: &HashMap<i32, Vec<char>>) {
     let mut set: HashSet<Vec<char>> = HashSet::new();
 
     //for value in known_digits.values() {
-    for (key, value) in known_digits.into_iter() {
-        println!("{} = {:?}", key, value);
+    for (_, value) in known_digits.into_iter() {
+        //println!("{} = {:?}", key, value);
         set.insert(value.clone());
     }
 
@@ -262,7 +262,7 @@ fn figure_out_digit_5(tmp: &Vec<&str>, known_digits: &mut HashMap<i32, Vec<char>
 fn not_known(candidate: Vec<char>, known_digits: &HashMap<i32, Vec<char>>) -> bool {
     for value in known_digits.values().into_iter() {
         if candidate == *value {
-            println!("{:?}", value);
+            //println!("{:?}", value);
             return false
         }
     }
