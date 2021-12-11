@@ -24,16 +24,16 @@ pub fn part_a(text: String) -> i32 {
     return flash_count;
 }
 
-fn get_neighbours(x: isize, y: isize, width: isize, height: isize) -> Vec<Point> {
+fn get_neighbours(x: usize, y: usize, width: usize, height: usize) -> Vec<Point> {
     let mut neighbors: Vec<Point> = Vec::new();
 
-    for x_delta in -1 ..= 1 {
-        for y_delta in -1 ..= 1 {
-           let can_x = x + x_delta;
-           let can_y = y + y_delta;
+    for x_delta in -1isize ..= 1isize {
+        for y_delta in -1isize ..= 1isize {
+           let can_x = (x as isize) + x_delta;
+           let can_y = (y as isize) + y_delta;
 
-            if can_x >= 0 && can_x < width && can_y >= 0 && can_y < height {
-                neighbors.push(Point {x: can_x, y: can_y })
+            if can_x >= 0 && can_x < width as isize && can_y >= 0 && can_y < height as isize {
+                neighbors.push(Point {x: can_x as usize, y: can_y as usize })
             }
         }
     }
@@ -53,7 +53,7 @@ pub fn run_step(energy_levels: Vec<Vec<u32>>) -> (i32, Vec<Vec<u32>>) {
             cloned[y][x] += 1;
 
             if cloned[y][x] > 9 {
-                pending_flashers.push(Point {x: x as isize, y: y as isize});
+                pending_flashers.push(Point {x: x, y: y});
             }
         }
     }
@@ -61,12 +61,12 @@ pub fn run_step(energy_levels: Vec<Vec<u32>>) -> (i32, Vec<Vec<u32>>) {
     while pending_flashers.len() > 0 {
         let point = pending_flashers.pop().unwrap();
         already_flashed.insert(point);
-        let neighbors = get_neighbours(point.x, point.y, width as isize, height as isize);
+        let neighbors = get_neighbours(point.x, point.y, width, height);
 
         for neighbor in neighbors {
-            cloned[neighbor.y as usize][neighbor.x as usize] += 1;
+            cloned[neighbor.y][neighbor.x] += 1;
 
-            if cloned[neighbor.y as usize][neighbor.x as usize] > 9 && !pending_flashers.contains(&neighbor) && !already_flashed.contains(&neighbor) {
+            if cloned[neighbor.y][neighbor.x] > 9 && !pending_flashers.contains(&neighbor) && !already_flashed.contains(&neighbor) {
                 pending_flashers.push(neighbor);
             }
         }
@@ -75,7 +75,7 @@ pub fn run_step(energy_levels: Vec<Vec<u32>>) -> (i32, Vec<Vec<u32>>) {
     let mut flash_count = 0;
 
     for p in already_flashed {
-        cloned[p.y as usize][p.x as usize] = 0;
+        cloned[p.y][p.x] = 0;
         flash_count += 1;
     }
 
@@ -115,8 +115,8 @@ pub fn part_b(text: String) -> i32 {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Point {
-    pub x: isize,
-    pub y: isize
+    pub x: usize,
+    pub y: usize
 }
 
 
