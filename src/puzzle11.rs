@@ -25,23 +25,20 @@ pub fn part_a(text: String) -> i32 {
 }
 
 fn get_neighbours(x: isize, y: isize, width: isize, height: isize) -> Vec<Point> {
-    let all = vec![
-        Point { x: x-1, y: y-1 },
-        Point { x: x, y: y-1 },
-        Point { x: x+1, y: y-1 },
+    let mut neighbors: Vec<Point> = Vec::new();
 
-        Point { x: x-1, y: y },
-        Point { x: x+1, y: y },
+    for x_delta in -1 ..= 1 {
+        for y_delta in -1 ..= 1 {
+           let can_x = x + x_delta;
+           let can_y = y + y_delta;
 
-        Point { x: x-1, y: y+1 },
-        Point { x: x, y: y+1 },
-        Point { x: x+1, y: y+1 },
-    ];
+            if can_x >= 0 && can_x < width && can_y >= 0 && can_y < height {
+                neighbors.push(Point {x: can_x, y: can_y })
+            }
+        }
+    }
 
-    return all.iter().filter(|p| {
-        p.x >= 0 && p.x < width
-        && p.y >= 0 && p.y < height
-    }).map(|p| *p).collect();
+    return neighbors;
 }
 
 pub fn run_step(energy_levels: Vec<Vec<u32>>) -> (i32, Vec<Vec<u32>>) {
