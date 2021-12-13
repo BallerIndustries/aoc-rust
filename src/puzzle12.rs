@@ -1,18 +1,18 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 
 pub fn part_a(text: String) -> i32 {
     let mut paths: HashMap<&str, Vec<&str>> = HashMap::new();
 
     for line in text.lines() {
         let tmp: Vec<&str> = line.split("-").collect();
-        let mut forward: &mut Vec<&str> = paths.entry(tmp[0]).or_insert(Vec::new());
+        let forward: &mut Vec<&str> = paths.entry(tmp[0]).or_insert(Vec::new());
         forward.push(tmp[1]);
 
-        let mut backward: &mut Vec<&str> = paths.entry(tmp[1]).or_insert(Vec::new());
+        let backward: &mut Vec<&str> = paths.entry(tmp[1]).or_insert(Vec::new());
         backward.push(tmp[0]);
     }
 
-    let mut current = "start";
+    let current = "start";
     let mut visited: Vec<&str> = Vec::new();
     visited.push(current);
 
@@ -77,14 +77,14 @@ pub fn part_b(text: String) -> i32 {
         let from = tmp[0];
         let to = tmp[1];
 
-        let mut forward: &mut Vec<&str> = paths.entry(from).or_insert(Vec::new());
+        let forward: &mut Vec<&str> = paths.entry(from).or_insert(Vec::new());
         forward.push(to);
 
-        let mut backward: &mut Vec<&str> = paths.entry(to).or_insert(Vec::new());
+        let backward: &mut Vec<&str> = paths.entry(to).or_insert(Vec::new());
         backward.push(from);
     }
 
-    let mut current = "start";
+    let current = "start";
     let mut visited: Vec<&str> = Vec::new();
     visited.push(current);
 
