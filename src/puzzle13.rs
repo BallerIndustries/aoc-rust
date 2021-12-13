@@ -24,73 +24,37 @@ impl Point {
 
 pub fn part_a(text: String) -> i32 {
     let temp = text.split("\n\n").collect::<Vec<&str>>();
-    let point_text: &str = temp[0];
-    let mut points: Vec<Point> = point_text.lines().map(|line| {
-        let jur: Vec<i32> = line.split(",").map(|it| it.parse::<i32>().unwrap()).collect();
-        return Point { x: jur[0], y: jur[1] }
-    }).collect();
+    let mut points = parse_points(&temp);
 
     let command_text = temp[1];
     let commands: Vec<&str> = command_text.lines().collect();
+    process_command(&mut points, commands[0]);
 
-    let octopus: &str = commands[0];
-    let pieces: Vec<&str> = octopus.split("=").collect();
-    let axis = pieces[0].split_whitespace().collect::<Vec<&str>>()[2];
-    let value = pieces[1].parse::<i32>().unwrap();
-
-    if axis == "x" {
-        for point in points.iter_mut() {
-            point.fold_x(value)
-        }
-    }
-    else if axis == "y" {
-        for point in points.iter_mut() {
-            point.fold_y(value);
-        }
-    }
-    else {
-        panic!("oh no");
-    }
-
-    let mut horses: HashSet<Point> = HashSet::new();
+    let mut distinct_points: HashSet<Point> = HashSet::new();
 
     for point in points {
-        horses.insert(point);
+        distinct_points.insert(point);
     }
 
-    return horses.len() as i32;
+    return distinct_points.len() as i32;
+}
+
+fn parse_points(temp: &Vec<&str>) -> Vec<Point> {
+    let point_text: &str = temp[0];
+    let points: Vec<Point> = point_text.lines().map(|line| {
+        let jur: Vec<i32> = line.split(",").map(|it| it.parse::<i32>().unwrap()).collect();
+        return Point { x: jur[0], y: jur[1] }
+    }).collect();
+    points
 }
 
 pub fn part_b(text: String) -> i32 {
     let temp = text.split("\n\n").collect::<Vec<&str>>();
-    let point_text: &str = temp[0];
-    let mut points: Vec<Point> = point_text.lines().map(|line| {
-        let jur: Vec<i32> = line.split(",").map(|it| it.parse::<i32>().unwrap()).collect();
-        return Point { x: jur[0], y: jur[1] }
-    }).collect();
+    let mut points = parse_points(&temp);
+    let commands: Vec<&str> = temp[1].lines().collect();
 
-    let command_text = temp[1];
-    let commands: Vec<&str> = command_text.lines().collect();
-
-    for octopus in commands {
-        //let octopus: &str = commands[0];
-        let pieces: Vec<&str> = octopus.split("=").collect();
-        let axis = pieces[0].split_whitespace().collect::<Vec<&str>>()[2];
-        let value = pieces[1].parse::<i32>().unwrap();
-
-        if axis == "x" {
-            for point in points.iter_mut() {
-                point.fold_x(value)
-            }
-        }
-        else if axis == "y" {
-            for point in points.iter_mut() {
-                point.fold_y(value);
-            }
-        }
-        else {
-            panic!("oh no");
-        }
+    for command in commands {
+        process_command(&mut points, command)
     }
 
     let max_x = points.clone().iter().map(|p| p.x).max().unwrap();
@@ -118,6 +82,24 @@ pub fn part_b(text: String) -> i32 {
     }
 
     return distinct.len() as i32;
+}
+
+fn process_command(points: &mut Vec<Point>, command: &str) {
+    let pieces: Vec<&str> = command.split("=").collect();
+    let axis = pieces[0].split_whitespace().collect::<Vec<&str>>()[2];
+    let value = pieces[1].parse::<i32>().unwrap();
+
+    if axis == "x" {
+        for point in points.iter_mut() {
+            point.fold_x(value)
+        }
+    } else if axis == "y" {
+        for point in points.iter_mut() {
+            point.fold_y(value);
+        }
+    } else {
+        panic!("oh no");
+    }
 }
 
 #[cfg(test)]
