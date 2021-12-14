@@ -22,12 +22,18 @@ impl Point {
     }
 }
 
+fn parse_points(temp: &Vec<&str>) -> Vec<Point> {
+    temp[0].lines().map(|line| {
+        let jur: Vec<i32> = line.split(",").map(|it| it.parse::<i32>().unwrap()).collect();
+        return Point { x: jur[0], y: jur[1] }
+    }).collect()
+}
+
 pub fn part_a(text: String) -> i32 {
     let temp = text.split("\n\n").collect::<Vec<&str>>();
     let mut points = parse_points(&temp);
 
-    let command_text = temp[1];
-    let commands: Vec<&str> = command_text.lines().collect();
+    let commands: Vec<&str> = temp[1].lines().collect();
     process_command(&mut points, commands[0]);
 
     let mut distinct_points: HashSet<Point> = HashSet::new();
@@ -37,13 +43,6 @@ pub fn part_a(text: String) -> i32 {
     }
 
     return distinct_points.len() as i32;
-}
-
-fn parse_points(temp: &Vec<&str>) -> Vec<Point> {
-    temp[0].lines().map(|line| {
-        let jur: Vec<i32> = line.split(",").map(|it| it.parse::<i32>().unwrap()).collect();
-        return Point { x: jur[0], y: jur[1] }
-    }).collect()
 }
 
 pub fn part_b(text: String) -> i32 {

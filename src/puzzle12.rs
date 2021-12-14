@@ -28,9 +28,6 @@ pub fn part_a(text: String) -> i32 {
             continue
         }
 
-        //println!("current = {}", current);
-
-        // TODO: Make this idiomatic
         let _path_options = paths.get(current);
 
         if _path_options.is_none() {
@@ -100,9 +97,6 @@ pub fn part_b(text: String) -> i32 {
             continue
         }
 
-        //println!("current = {}", current);
-
-        // TODO: Make this idiomatic
         let _path_options = paths.get(current);
 
         if _path_options.is_none() {
