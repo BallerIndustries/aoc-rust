@@ -1,57 +1,6 @@
 use std::collections::{HashMap};
 
-pub fn part_a(text: String) -> i64 {
-    let pieces: Vec<&str> = text.split("\n\n").collect();
-    let mut rules: HashMap<(char, char), char> = HashMap::new();
-
-    for rule in pieces[1].lines() {
-        let tmp: Vec<&str> = rule.split(" -> ").collect();
-        let from_chars: Vec<char> = tmp[0].chars().collect();
-        let to_chars: Vec<char> = tmp[1].chars().collect();
-        rules.insert((from_chars[0], from_chars[1]), to_chars[0]);
-    }
-
-    let mut counter = 0;
-    let mut compound: String = pieces[0].into();
-
-    while counter < 10 {
-        compound = run_step(&rules, &compound);
-        counter += 1;
-    }
-
-    return count_delta(&compound);
-}
-
-fn count_delta(compound: &str) -> i64 {
-    let mut char_to_count: HashMap<char, i64> = HashMap::new();
-
-    for char in compound.chars() {
-        let counter = char_to_count.entry(char).or_insert(0);
-        *counter += 1;
-    }
-
-    let max = char_to_count.values().max().unwrap();
-    let min = char_to_count.values().min().unwrap();
-    return max - min;
-}
-
-fn run_step(rules: &HashMap<(char, char), char>, compound: &str) -> String {
-    let chars: Vec<char> = compound.chars().collect();
-    let mut buffer: String = "".into();
-    buffer.push(chars[0]);
-
-    for index in 0..chars.len()-1 {
-        let tuple = (chars[index], chars[index+1]);
-        let in_between_char = rules.get(&tuple).unwrap();
-
-        buffer.push(*in_between_char);
-        buffer.push(tuple.1);
-    }
-
-    return buffer;
-}
-
-pub fn part_b(text: String) -> i64 {
+pub fn simulate(text: String, iterations: i32) -> i64 {
     let pieces: Vec<&str> = text.split("\n\n").collect();
     let mut rules: HashMap<(char, char), char> = HashMap::new();
     let mut compound: String = pieces[0].into();
@@ -74,10 +23,8 @@ pub fn part_b(text: String) -> i64 {
         *counter += 1;
     }
 
-    print_pair_frequency(&pair_frequency);
-
     // Increment the compounds
-    for _ in 0..10 {
+    for _ in 0..iterations {
         let mut new_pair_frequency: HashMap<(char, char), i64> = HashMap::new();
 
         for (pair, count) in pair_frequency {
@@ -92,24 +39,18 @@ pub fn part_b(text: String) -> i64 {
         }
 
         pair_frequency = new_pair_frequency;
-        print_pair_frequency(&pair_frequency);
-        //println!("pair_frequency = {:?}", pair_frequency);
     }
 
-
-
-    println!("hi");
-
-    // let mut counter = 0;
-    // println!("{}\n", compound);
-    //
-    // while counter < 10 {
-    //     compound = run_step(&rules, &compound);
-    //     println!("{}\n", compound);
-    //     counter += 1;
-    // }
-
     return count_delta_v2(&pair_frequency);
+}
+
+
+pub fn part_a(text: String) -> i64 {
+    return simulate(text, 10);
+}
+
+pub fn part_b(text: String) -> i64 {
+    return simulate(text, 40);
 }
 
 fn print_pair_frequency(freq: &HashMap<(char, char), i64>) {
