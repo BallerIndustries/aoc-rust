@@ -1,4 +1,5 @@
 use std::collections::{HashMap};
+use std::os::raw::c_double;
 
 pub fn simulate(text: String, iterations: i32) -> i64 {
     let pieces: Vec<&str> = text.split("\n\n").collect();
@@ -23,6 +24,8 @@ pub fn simulate(text: String, iterations: i32) -> i64 {
         *counter += 1;
     }
 
+    print_pair_frequency(&pair_frequency);
+
     // Increment the compounds
     for _ in 0..iterations {
         let mut new_pair_frequency: HashMap<(char, char), i64> = HashMap::new();
@@ -39,6 +42,7 @@ pub fn simulate(text: String, iterations: i32) -> i64 {
         }
 
         pair_frequency = new_pair_frequency;
+        print_pair_frequency(&pair_frequency);
     }
 
     return count_delta_v2(&pair_frequency);
@@ -54,8 +58,8 @@ pub fn part_b(text: String) -> i64 {
 }
 
 fn print_pair_frequency(freq: &HashMap<(char, char), i64>) {
-    for entry in freq {
-        print!("{}{} = {} ", entry.0.1, entry.0.1, entry.1)
+    for ((a, b), count) in freq {
+        print!("{}{} = {} ", *a, *b, *count)
     }
 
     print!("\n");
@@ -74,7 +78,8 @@ fn count_delta_v2(pair_frequency: &HashMap<(char, char), i64>) -> i64 {
 
     let max = *char_to_count.values().max().unwrap();
     let min = *char_to_count.values().min().unwrap();
-    return max - min;
+    let delta = max as f64 - min as f64;
+    return (delta / 2f64).ceil() as i64;
 }
 
 #[cfg(test)]
