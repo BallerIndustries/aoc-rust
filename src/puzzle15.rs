@@ -1,9 +1,30 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Point {
     pub x: usize,
     pub y: usize
+}
+
+fn get_paths_v2(grid: &Vec<Vec<u32>>, p: Point) -> Vec<Point> {
+    let width = grid[0].len();
+    let height = grid.len();
+    let mut paths: Vec<Point> = vec![];
+
+    if p.x > 0 {
+        paths.push(Point { x: p.x - 1, y: p.y })
+    }
+    if p.x < width - 1 {
+        paths.push(Point { x: p.x + 1, y: p.y })
+    }
+    if p.y > 0 {
+        paths.push(Point { x: p.x, y: p.y - 1 })
+    }
+    if p.y < height - 1 {
+        paths.push(Point { x: p.x, y: p.y + 1 })
+    }
+
+    return paths;
 }
 
 fn get_paths(grid: &Vec<Vec<u32>>, p: Point, visited: &HashSet<Point>) -> Vec<Point> {
@@ -29,52 +50,65 @@ fn get_paths(grid: &Vec<Vec<u32>>, p: Point, visited: &HashSet<Point>) -> Vec<Po
         .collect()
 }
 
+fn h(point: Point, grid: &Vec<Vec<u32>>) -> u32 {
+    return grid[point.y][point.x];
+}
+
+fn calculate_risk_score(grid: Vec<Vec<u32>>, came_from: &HashMap<Point, Point>, current: Point) -> u32 {
+    let mut total = 0u32;
+    let mut _current = current;
+
+    while came_from.contains_key(&_current) {
+        let score = grid[_current.y][_current.x];
+        println!("_current = {:?} score = {}", _current, score);
+        total += score;
+        _current = came_from[&_current];
+    }
+
+    return total;
+}
+
 pub fn part_a(text: String) -> u32 {
     let grid = text.lines().map(|line| {
         line.chars().map(|c| c.to_digit(10).unwrap() ).collect::<Vec<u32>>()
     }).collect::<Vec<Vec<u32>>>();
 
     let target = Point { x: grid[0].len() - 1, y: grid.len() - 1 };
-    let mut states: Vec<(Point, HashSet<Point>)> = vec![(Point { x: 0, y: 0 }, HashSet::new())];
-    let mut min_risk_total = 4294967295;
+    let start = Point { x: 0, y: 0 };
+    let mut open_set = vec![start];
+    let mut came_from: HashMap<Point, Point> = HashMap::new();
+    let mut g_score: HashMap<Point, u32> = HashMap::new();
+    g_score.insert(start, 0);
 
-    while !states.is_empty() {
-        let result = states.pop().unwrap();
-        let current = result.0;
-        let mut visited = result.1;
-        visited.insert(current);
+    let mut f_score: HashMap<Point, u32> = HashMap::new();
+    f_score.insert(start, h(start, &grid));
 
-        let m_distance: u32 = ((target.x - current.x) + (target.y - current.y)) as u32;
-        let risk_total: u32 = visited.iter().map(|p| grid[p.y][p.x]).sum::<u32>() - grid[0][0];
-
-        if risk_total + m_distance > min_risk_total {
-            continue
-        }
+    while !open_set.is_empty() {
+        let current = open_set.remove(0);
 
         if current == target {
-            if risk_total < min_risk_total {
-                min_risk_total = risk_total
-            }
-
-            continue
+            return calculate_risk_score(grid, &came_from, current);
         }
 
-        // We haven't hit the target
-        let mut paths: Vec<Point> = get_paths(&grid, current, &visited);
-        // paths.sort_by(|a, b| {
-        //     let a_value = grid[a.y][a.x];
-        //     let b_value = grid[b.y][b.x];
-        //
-        //     return a_value.cmp(&b_value)
-        // });
+        let neighbors = get_paths_v2(&grid, current);
+        let BIG_VALUE: u32 = 4294967295;
 
-        for path in paths {
-            states.push((path, visited.clone()))
+        for neighbor in neighbors {
+            let tentative_g_score = g_score[&current] + grid[neighbor.y][neighbor.x];
+
+            if tentative_g_score < *g_score.get(&neighbor).unwrap_or(&BIG_VALUE) {
+                came_from.insert(neighbor, current);
+                f_score.insert(neighbor, tentative_g_score);
+                g_score.insert(neighbor, tentative_g_score + h(neighbor, &grid));
+
+                if !open_set.contains(&neighbor) {
+                    open_set.push(neighbor)
+                }
+            }
         }
     }
 
-    // Go for a DFS with pruning?
-    return min_risk_total
+    panic!("Open set is empty but goal was never reached");
 }
 
 pub fn part_b(text: String) -> i32 {
