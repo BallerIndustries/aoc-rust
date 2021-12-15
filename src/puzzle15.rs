@@ -35,13 +35,13 @@ fn get_paths(grid: &Vec<Vec<u32>>, p: Point, visited: &HashSet<Point>) -> Vec<Po
     if p.x > 0 {
         paths.push(Point { x: p.x - 1, y: p.y })
     }
-    if p.x < width - 1 {
+    if p.x < width {
         paths.push(Point { x: p.x + 1, y: p.y })
     }
     if p.y > 0 {
         paths.push(Point { x: p.x, y: p.y - 1 })
     }
-    if p.y < height - 1 {
+    if p.y < height {
         paths.push(Point { x: p.x, y: p.y + 1 })
     }
 
@@ -50,8 +50,8 @@ fn get_paths(grid: &Vec<Vec<u32>>, p: Point, visited: &HashSet<Point>) -> Vec<Po
         .collect()
 }
 
-fn h(point: Point, grid: &Vec<Vec<u32>>) -> u32 {
-    return grid[point.y][point.x];
+fn h(point: Point, target: Point) -> u32 {
+    return ((target.x - point.x) + (target.y - point.y)) as u32;
 }
 
 fn calculate_risk_score(grid: Vec<Vec<u32>>, came_from: &HashMap<Point, Point>, current: Point) -> u32 {
@@ -60,7 +60,7 @@ fn calculate_risk_score(grid: Vec<Vec<u32>>, came_from: &HashMap<Point, Point>, 
 
     while came_from.contains_key(&_current) {
         let score = grid[_current.y][_current.x];
-        println!("_current = {:?} score = {}", _current, score);
+        //println!("_current = {:?} score = {}", _current, score);
         total += score;
         _current = came_from[&_current];
     }
@@ -81,7 +81,7 @@ pub fn part_a(text: String) -> u32 {
     g_score.insert(start, 0);
 
     let mut f_score: HashMap<Point, u32> = HashMap::new();
-    f_score.insert(start, h(start, &grid));
+    f_score.insert(start, 0);
 
     while !open_set.is_empty() {
         let current = open_set.remove(0);
@@ -98,14 +98,20 @@ pub fn part_a(text: String) -> u32 {
 
             if tentative_g_score < *g_score.get(&neighbor).unwrap_or(&BIG_VALUE) {
                 came_from.insert(neighbor, current);
-                f_score.insert(neighbor, tentative_g_score);
-                g_score.insert(neighbor, tentative_g_score + h(neighbor, &grid));
+                g_score.insert(neighbor, tentative_g_score);
+                f_score.insert(neighbor, tentative_g_score + h(neighbor, target));
 
                 if !open_set.contains(&neighbor) {
                     open_set.push(neighbor)
                 }
             }
         }
+
+        open_set.sort_by(|p1, p2| {
+            let x: u32 = f_score[&p1];
+            let x1: u32 = f_score[&p2];
+            return x.cmp(&x1)
+        })
     }
 
     panic!("Open set is empty but goal was never reached");
@@ -124,7 +130,7 @@ mod tests {
     #[test]
     fn puzzle_part_a() {
         let text = read_all_text(FILENAME);
-        assert_eq!(part_a(text), 0)
+        assert_eq!(part_a(text), 398)
     }
 
     #[test]
@@ -146,6 +152,20 @@ mod tests {
 1293138521
 2311944581
 ".into()), 40);
+    }
+
+    #[test]
+    fn example_part_a_2() {
+        assert_eq!(part_a("1911191111
+1119111991
+9999999111
+9999911199
+9999119999
+9999199999
+9111199999
+9199999111
+9111911191
+9991119991".into()), 40);
     }
 
     #[test]
