@@ -54,7 +54,7 @@ fn h(point: Point, target: Point) -> u32 {
     return ((target.x - point.x) + (target.y - point.y)) as u32;
 }
 
-fn calculate_risk_score(grid: Vec<Vec<u32>>, came_from: &HashMap<Point, Point>, current: Point) -> u32 {
+fn calculate_risk_score(grid: &Vec<Vec<u32>>, came_from: &HashMap<Point, Point>, current: Point) -> u32 {
     let mut total = 0u32;
     let mut _current = current;
 
@@ -73,6 +73,10 @@ pub fn part_a(text: String) -> u32 {
         line.chars().map(|c| c.to_digit(10).unwrap() ).collect::<Vec<u32>>()
     }).collect::<Vec<Vec<u32>>>();
 
+    return a_star(&grid);
+}
+
+fn a_star(grid: &Vec<Vec<u32>>) -> u32 {
     let target = Point { x: grid[0].len() - 1, y: grid.len() - 1 };
     let start = Point { x: 0, y: 0 };
     let mut open_set = vec![start];
@@ -117,8 +121,49 @@ pub fn part_a(text: String) -> u32 {
     panic!("Open set is empty but goal was never reached");
 }
 
-pub fn part_b(text: String) -> i32 {
-    panic!("Not implemented")
+pub fn part_b(text: String) -> u32 {
+    let lines: Vec<&str> = text.lines().collect();
+    // let mut grid = text.lines().map(|line| {
+    //     line.chars().map(|c| c.to_digit(10).unwrap() ).collect::<Vec<u32>>()
+    // }).collect::<Vec<Vec<u32>>>();
+
+    let width = lines[0].len();
+    let height = lines.len();
+
+    let new_height = height * 5;
+    let new_width = width * 5;
+
+    let mut grid = vec![vec![0u32; new_width]; new_height];
+
+    for y in 0..height {
+        for x in 0..width {
+            let line: Vec<char> = lines[y].chars().collect();
+            grid[y][x] = line[x].to_digit(10).unwrap();
+        }
+    }
+
+    for y in 0..new_height {
+        for x in 0..new_width {
+            let value = grid[y][x];
+
+            if value == 0 {
+                //let increment = (y / height) + (x / width);
+                let y_increment = y / height;
+                let x_increment = x / width;
+                let total_increment = (y_increment + x_increment) as u32;
+
+                let original_risk_level = grid[y - y_increment * height][x - x_increment * width];
+                grid[y][x] = original_risk_level + total_increment;
+
+                if grid[y][x] > 9 {
+                    grid[y][x] = grid[y][x] % 9;
+                }
+            }
+        }
+    }
+
+
+    return a_star(&grid);
 }
 
 #[cfg(test)]
@@ -136,7 +181,7 @@ mod tests {
     #[test]
     fn puzzle_part_b() {
         let text = read_all_text(FILENAME);
-        assert_eq!(part_b(text), 0)
+        assert_eq!(part_b(text), 2817)
     }
 
     #[test]
@@ -170,6 +215,16 @@ mod tests {
 
     #[test]
     fn example_part_b() {
-        assert_eq!(part_b("".into()), 0);
+        assert_eq!(part_b("1163751742
+1381373672
+2136511328
+3694931569
+7463417111
+1319128137
+1359912421
+3125421639
+1293138521
+2311944581
+".into()), 315);
     }
 }
