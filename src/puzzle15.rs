@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Point {
@@ -25,29 +25,6 @@ fn get_paths_v2(grid: &Vec<Vec<u32>>, p: Point) -> Vec<Point> {
     }
 
     return paths;
-}
-
-fn get_paths(grid: &Vec<Vec<u32>>, p: Point, visited: &HashSet<Point>) -> Vec<Point> {
-    let width = grid[0].len();
-    let height = grid.len();
-    let mut paths: Vec<Point> = vec![];
-
-    if p.x > 0 {
-        paths.push(Point { x: p.x - 1, y: p.y })
-    }
-    if p.x < width {
-        paths.push(Point { x: p.x + 1, y: p.y })
-    }
-    if p.y > 0 {
-        paths.push(Point { x: p.x, y: p.y - 1 })
-    }
-    if p.y < height {
-        paths.push(Point { x: p.x, y: p.y + 1 })
-    }
-
-    return paths.into_iter()
-        .filter(|p| !visited.contains(p))
-        .collect()
 }
 
 fn h(point: Point, target: Point) -> u32 {
@@ -95,12 +72,12 @@ fn a_star(grid: &Vec<Vec<u32>>) -> u32 {
         }
 
         let neighbors = get_paths_v2(&grid, current);
-        let BIG_VALUE: u32 = 4294967295;
+        let big_value: u32 = 4294967295;
 
         for neighbor in neighbors {
             let tentative_g_score = g_score[&current] + grid[neighbor.y][neighbor.x];
 
-            if tentative_g_score < *g_score.get(&neighbor).unwrap_or(&BIG_VALUE) {
+            if tentative_g_score < *g_score.get(&neighbor).unwrap_or(&big_value) {
                 came_from.insert(neighbor, current);
                 g_score.insert(neighbor, tentative_g_score);
                 f_score.insert(neighbor, tentative_g_score + h(neighbor, target));

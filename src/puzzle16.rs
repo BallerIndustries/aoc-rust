@@ -1,6 +1,6 @@
-
 #[derive(Debug)]
 pub struct Node {
+    pub version: u64,
     pub value: String,
     pub children: Vec<Node>
 }
@@ -40,86 +40,33 @@ fn read_int(binary: &str, index: usize, count: usize) -> (u64, usize) {
     return (to_int(result.0), result.1)
 }
 
-pub fn part_a(text: String) -> i32 {
+pub fn part_a(text: String) -> u64 {
     let mut binary: String = "".into();
 
     for char in text.chars() {
         binary.push_str(to_binary(char))
     }
 
-    let index: usize = 0;
-    parse_packet(&binary, index);
-
-    return 1;
+    let (_, head) = parse_packet(&binary, 0);
+    return sum_versions(&head);
 }
 
-fn parse_packet(binary: &str, index: usize) -> usize {
-    let (_, index) = read_int(&binary, index, 3);
-    let (type_yo, mut index) = read_int(&binary, index, 3);
+fn sum_versions(node: &Node) -> u64 {
+    let children_versions = node.children.iter()
+        .map(|it| sum_versions(&it))
+        .collect::<Vec<u64>>();
 
-    if type_yo == 4 {
-        // Literal Value
-        let mut result = read_chars(&binary, index, 5);
-        let mut temp = result.0;
-        index = result.1;
-        let mut number_buffer: String = temp[1..5].into();
+    let mut total: u64 = 0;
 
-        while temp.chars().collect::<Vec<char>>()[0] == '1' {
-            result = read_chars(&binary, index, 5);
-            temp = result.0;
-            index = result.1;
-            number_buffer.push_str(&temp[1..5]);
-        }
-
-        let value = to_int(&number_buffer);
-        print!("{} ", value);
-    } else {
-        let mut result = read_chars(&binary, index, 1);
-        let len_type_id = result.0;
-        index = result.1;
-
-        match type_yo {
-            0 => { print!("sum ") }
-            1 => { print!("product ") }
-            2 => { print!("minimum ") }
-            3 => { print!("maximum ") }
-            5 => { print!("greater_than ") }
-            6 => { print!("less_than ") }
-            7 => { print!("equal_to ") }
-            _ => {}
-        }
-
-        if len_type_id == "0" {
-            // Fifteen bit number
-            result = read_chars(&binary, index, 15);
-
-            let length = to_int(result.0) as usize;
-            index = result.1;
-            let end_index = index + length;
-
-            while index < end_index {
-                index = parse_packet(binary, index)
-            }
-
-        }
-        else {
-            // Eleven bit number
-            result = read_chars(&binary, index, 11);
-
-            let count = to_int(result.0) as usize;
-            index = result.1;
-
-            for _ in 0..count {
-                index = parse_packet(binary, index)
-            }
-        }
+    for v in children_versions {
+        total += v;
     }
 
-    return index
+    return total + node.version;
 }
 
-fn parse_packet_v2(stack: &mut Vec<String>, binary: &String, index: usize) -> (usize, Node) {
-    let (_, index) = read_int(&binary, index, 3);
+fn parse_packet(binary: &String, index: usize) -> (usize, Node) {
+    let (version, index) = read_int(&binary, index, 3);
     let (type_yo, mut index) = read_int(&binary, index, 3);
 
     if type_yo == 4 {
@@ -137,9 +84,9 @@ fn parse_packet_v2(stack: &mut Vec<String>, binary: &String, index: usize) -> (u
         }
 
         let value = to_int(&number_buffer);
-        stack.push(value.to_string());
-        return (index, Node { value: value.to_string(), children: Vec::new() })
-    } else {
+        return (index, Node { version, value: value.to_string(), children: Vec::new() })
+    }
+    else {
         let mut result = read_chars(&binary, index, 1);
         let len_type_id = result.0;
         index = result.1;
@@ -165,12 +112,12 @@ fn parse_packet_v2(stack: &mut Vec<String>, binary: &String, index: usize) -> (u
             let mut children: Vec<Node> = vec![];
 
             while index < end_index {
-                let horse_result = parse_packet_v2(stack, binary, index);
+                let horse_result = parse_packet(binary, index);
                 index = horse_result.0;
                 children.push(horse_result.1);
             }
 
-            return (index, Node { value: node_name, children: children })
+            return (index, Node { version, value: node_name, children: children })
         }
         else {
             // Eleven bit number
@@ -181,12 +128,12 @@ fn parse_packet_v2(stack: &mut Vec<String>, binary: &String, index: usize) -> (u
             let mut children: Vec<Node> = vec![];
 
             for _ in 0..count {
-                let horse_result = parse_packet_v2(stack, binary, index);
+                let horse_result = parse_packet(binary, index);
                 index = horse_result.0;
                 children.push(horse_result.1);
             }
 
-            return (index, Node { value: node_name, children: children })
+            return (index, Node { version, value: node_name, children: children })
         }
     }
 }
@@ -198,196 +145,52 @@ pub fn part_b(text: String) -> u64 {
         binary.push_str(to_binary(char))
     }
 
-    let mut stack: Vec<String> = Vec::new();
-    //let head = Node { value: "".into(), children: Vec::new() };
-
-    let (_, head) = parse_packet_v2(&mut stack, &binary, 0);
-    println!("{:?}", stack);
-
-    //return resolve(&mut stack, 0).1;
-
+    let (_, head) = parse_packet(&binary, 0);
     return resolve_node(&head);
 }
 
 pub fn resolve_node(node: &Node) -> u64 {
     let horse: &str = &node.value;
 
-    match horse {
+    return match horse {
         "sum" => {
-            return node.children.iter()
-                .map(|it| resolve_node(it)).sum();
-
-            // let mut pieces: Vec<u64> = vec![];
-
-            // while index < stack.len() {
-            //     let result = resolve(stack, index);
-            //     pieces.push(result.1);
-            //     index = result.0;
-            // }
-            //
-            // return (index, pieces.iter().sum());
+            node.children.iter()
+                .map(|it| resolve_node(it)).sum()
         }
         "product" => {
-            return node.children.iter()
-                .map(|it| resolve_node(it)).product();
-
+            node.children.iter()
+                .map(|it| resolve_node(it)).product()
         }
         "minimum" => {
-            return node.children.iter()
-                .map(|it| resolve_node(it)).min().unwrap();
+            node.children.iter()
+                .map(|it| resolve_node(it)).min().unwrap()
         }
         "maximum" => {
-            return node.children.iter()
-                .map(|it| resolve_node(it)).max().unwrap();
+            node.children.iter()
+                .map(|it| resolve_node(it)).max().unwrap()
         }
         "greater_than" => {
             let pieces: Vec<u64> = node.children.iter()
                 .map(|it| resolve_node(it)).collect();
 
-            if pieces[0] > pieces[1] {
-                return 1;
-            }
-            else {
-                return 0;
-            }
+            if pieces[0] > pieces[1] { 1 } else { 0 }
         }
         "less_than" => {
             let pieces: Vec<u64> = node.children.iter()
                 .map(|it| resolve_node(it)).collect();
 
-            if pieces[0] < pieces[1] {
-                return 1;
-            }
-            else {
-                return 0;
-            }
+            if pieces[0] < pieces[1] { 1 } else { 0 }
         }
         "equal_to" => {
             let pieces: Vec<u64> = node.children.iter()
                 .map(|it| resolve_node(it)).collect();
 
-            if pieces[0] == pieces[1] {
-                return 1;
-            }
-            else {
-                return 0;
-            }
+            if pieces[0] == pieces[1] { 1 } else { 0 }
         }
         _ => {
-            return node.value.parse::<u64>().unwrap();
+            node.value.parse::<u64>().unwrap()
         }
     }
-}
-
-pub fn resolve(stack: &mut Vec<String>, start_index: usize) -> (usize, u64) {
-    //println!("hi");
-    let mut result = 0;
-    let mut index = start_index;
-
-    while index < stack.len() {
-        let value: &str = &stack[index];
-        index += 1;
-
-        match value {
-            "sum" => {
-                let mut pieces: Vec<u64> = vec![];
-
-                while index < stack.len() {
-                    let result = resolve(stack, index);
-                    pieces.push(result.1);
-                    index = result.0;
-                }
-
-                return (index, pieces.iter().sum());
-            }
-            "product" => {
-                let mut pieces: Vec<u64> = vec![];
-
-                while index < stack.len() {
-                    let result = resolve(stack, index);
-                    pieces.push(result.1);
-                    index = result.0;
-                }
-
-                return (index, pieces.iter().product());
-            }
-            "minimum" => {
-                let mut pieces: Vec<u64> = vec![];
-
-                while index < stack.len() {
-                    let result = resolve(stack, index);
-                    pieces.push(result.1);
-                    index = result.0;
-                }
-
-                return (index, *pieces.iter().min().unwrap());
-            }
-            "maximum" => {
-                let mut pieces: Vec<u64> = vec![];
-
-                while index < stack.len() {
-                    let result = resolve(stack, index);
-                    pieces.push(result.1);
-                    index = result.0;
-                }
-
-                return (index, *pieces.iter().max().unwrap());
-            }
-            "greater_than" => {
-                let mut pieces: Vec<u64> = vec![];
-
-                while index < stack.len() {
-                    let result = resolve(stack, index);
-                    pieces.push(result.1);
-                    index = result.0;
-                }
-
-                if pieces[0] > pieces[1] {
-                    return (index, 1);
-                }
-                else {
-                    return (index, 0);
-                }
-            }
-            "less_than" => {
-                let mut pieces: Vec<u64> = vec![];
-
-                while index < stack.len() {
-                    let result = resolve(stack, index);
-                    pieces.push(result.1);
-                    index = result.0;
-                }
-
-                if pieces[0] < pieces[1] {
-                    return (index, 1);
-                }
-                else {
-                    return (index, 0);
-                }
-            }
-            "equal_to" => {
-                let mut pieces: Vec<u64> = vec![];
-
-                while index < stack.len() {
-                    let result = resolve(stack, index);
-                    pieces.push(result.1);
-                    index = result.0;
-                }
-
-                if pieces[0] == pieces[1] {
-                    return (index, 1);
-                }
-                else {
-                    return (index, 0);
-                }
-            }
-            _ => {
-                return (index, value.parse::<u64>().unwrap());
-            }
-        }
-    }
-
-    panic!("ono");
 }
 
 #[cfg(test)]
@@ -399,33 +202,33 @@ mod tests {
     #[test]
     fn puzzle_part_a() {
         let text = read_all_text(FILENAME);
-        assert_eq!(part_a(text), 0)
+        assert_eq!(part_a(text), 879)
     }
 
     #[test]
     fn puzzle_part_b() {
         let text = read_all_text(FILENAME);
-        assert_eq!(part_b(text), 0)
+        assert_eq!(part_b(text), 539051801941)
     }
 
     #[test]
     fn example_part_a_1() {
-        assert_eq!(part_a("D2FE28".into()), 0);
+        assert_eq!(part_a("D2FE28".into()), 6);
     }
 
     #[test]
     fn example_part_a_2() {
-        assert_eq!(part_a("38006F45291200".into()), 0);
+        assert_eq!(part_a("38006F45291200".into()), 9);
     }
 
     #[test]
     fn example_part_a_3() {
-        assert_eq!(part_a("EE00D40C823060".into()), 0);
+        assert_eq!(part_a("EE00D40C823060".into()), 14);
     }
 
     #[test]
     fn example_part_a_4() {
-        assert_eq!(part_a("8A004A801A8002F478".into()), 0);
+        assert_eq!(part_a("8A004A801A8002F478".into()), 16);
     }
 
     #[test]
