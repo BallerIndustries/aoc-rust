@@ -1,4 +1,10 @@
 
+#[derive(Debug)]
+pub struct Node {
+    pub value: String,
+    pub children: Vec<Node>
+}
+
 fn to_binary(c: char) -> &'static str {
     match c {
         '0' => "0000",
@@ -112,7 +118,7 @@ fn parse_packet(binary: &str, index: usize) -> usize {
     return index
 }
 
-fn parse_packet_v2(stack: &mut Vec<String>, binary: &String, index: usize) -> usize {
+fn parse_packet_v2(stack: &mut Vec<String>, binary: &String, index: usize) -> (usize, Node) {
     let (_, index) = read_int(&binary, index, 3);
     let (type_yo, mut index) = read_int(&binary, index, 3);
 
@@ -131,24 +137,23 @@ fn parse_packet_v2(stack: &mut Vec<String>, binary: &String, index: usize) -> us
         }
 
         let value = to_int(&number_buffer);
-        //let string:  &'static str = &value.to_string();
         stack.push(value.to_string());
-        //print!("{} ", value);
+        return (index, Node { value: value.to_string(), children: Vec::new() })
     } else {
         let mut result = read_chars(&binary, index, 1);
         let len_type_id = result.0;
         index = result.1;
 
-        match type_yo {
-            0 => { stack.push("sum".into()) }
-            1 => { stack.push("product".into()) }
-            2 => { stack.push("minimum".into()) }
-            3 => { stack.push("maximum".into()) }
-            5 => { stack.push("greater_than".into()) }
-            6 => { stack.push("less_than".into()) }
-            7 => { stack.push("equal_to".into()) }
-            _ => {}
-        }
+        let node_name: String = match type_yo {
+            0 => { "sum".into() }
+            1 => { "product".into() }
+            2 => { "minimum".into() }
+            3 => { "maximum".into() }
+            5 => { "greater_than".into() }
+            6 => { "less_than".into() }
+            7 => { "equal_to".into() }
+            _ => { panic!("oh no!") }
+        };
 
         if len_type_id == "0" {
             // Fifteen bit number
@@ -157,11 +162,15 @@ fn parse_packet_v2(stack: &mut Vec<String>, binary: &String, index: usize) -> us
             let length = to_int(result.0) as usize;
             index = result.1;
             let end_index = index + length;
+            let mut children: Vec<Node> = vec![];
 
             while index < end_index {
-                index = parse_packet_v2(stack, binary, index)
+                let horse_result = parse_packet_v2(stack, binary, index);
+                index = horse_result.0;
+                children.push(horse_result.1);
             }
 
+            return (index, Node { value: node_name, children: children })
         }
         else {
             // Eleven bit number
@@ -169,14 +178,17 @@ fn parse_packet_v2(stack: &mut Vec<String>, binary: &String, index: usize) -> us
 
             let count = to_int(result.0) as usize;
             index = result.1;
+            let mut children: Vec<Node> = vec![];
 
             for _ in 0..count {
-                index = parse_packet_v2(stack, binary, index)
+                let horse_result = parse_packet_v2(stack, binary, index);
+                index = horse_result.0;
+                children.push(horse_result.1);
             }
+
+            return (index, Node { value: node_name, children: children })
         }
     }
-
-    return index
 }
 
 pub fn part_b(text: String) -> u64 {
@@ -187,10 +199,84 @@ pub fn part_b(text: String) -> u64 {
     }
 
     let mut stack: Vec<String> = Vec::new();
-    parse_packet_v2(&mut stack, &binary, 0);
+    //let head = Node { value: "".into(), children: Vec::new() };
+
+    let (_, head) = parse_packet_v2(&mut stack, &binary, 0);
     println!("{:?}", stack);
 
-    return resolve(&mut stack, 0).1;
+    //return resolve(&mut stack, 0).1;
+
+    return resolve_node(&head);
+}
+
+pub fn resolve_node(node: &Node) -> u64 {
+    let horse: &str = &node.value;
+
+    match horse {
+        "sum" => {
+            return node.children.iter()
+                .map(|it| resolve_node(it)).sum();
+
+            // let mut pieces: Vec<u64> = vec![];
+
+            // while index < stack.len() {
+            //     let result = resolve(stack, index);
+            //     pieces.push(result.1);
+            //     index = result.0;
+            // }
+            //
+            // return (index, pieces.iter().sum());
+        }
+        "product" => {
+            return node.children.iter()
+                .map(|it| resolve_node(it)).product();
+
+        }
+        "minimum" => {
+            return node.children.iter()
+                .map(|it| resolve_node(it)).min().unwrap();
+        }
+        "maximum" => {
+            return node.children.iter()
+                .map(|it| resolve_node(it)).max().unwrap();
+        }
+        "greater_than" => {
+            let pieces: Vec<u64> = node.children.iter()
+                .map(|it| resolve_node(it)).collect();
+
+            if pieces[0] > pieces[1] {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }
+        "less_than" => {
+            let pieces: Vec<u64> = node.children.iter()
+                .map(|it| resolve_node(it)).collect();
+
+            if pieces[0] < pieces[1] {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }
+        "equal_to" => {
+            let pieces: Vec<u64> = node.children.iter()
+                .map(|it| resolve_node(it)).collect();
+
+            if pieces[0] == pieces[1] {
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }
+        _ => {
+            return node.value.parse::<u64>().unwrap();
+        }
+    }
 }
 
 pub fn resolve(stack: &mut Vec<String>, start_index: usize) -> (usize, u64) {
@@ -356,8 +442,4 @@ mod tests {
     fn example_part_b_3() {
         assert_eq!(part_b("9C0141080250320F1802104A08".into()), 1);
     }
-
-
-
-
 }
