@@ -15,6 +15,7 @@ mod puzzle13;
 mod puzzle14;
 mod puzzle15;
 mod puzzle16;
+mod puzzle17;
 
 fn main() {
     println!("Good morning Cruise");

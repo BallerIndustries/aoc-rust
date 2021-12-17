@@ -68,7 +68,7 @@ fn sum_versions(node: &Node) -> u64 {
     return total + node.version;
 }
 
-fn parse_packet(binary: &String, index: &mut usize) -> Node {
+fn parse_packet(binary: &str, index: &mut usize) -> Node {
     let version= read_int(&binary, index, 3);
     let tipo = read_int(&binary, index, 3);
 
