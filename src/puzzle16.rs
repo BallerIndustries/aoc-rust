@@ -31,13 +31,16 @@ fn to_int(text: &str) -> u64 {
     return u64::from_str_radix(text, 2).unwrap();
 }
 
-fn read_chars(binary: &str, index: usize, count: usize) -> (&str, usize) {
-    return (&binary[index..index+count], index + count);
+fn read_chars<'a>(binary: &'a str, index: &'a mut usize, count: usize) -> &'a str {
+    let index_value = *index;
+    let value: &str = &binary[index_value..index_value+count];
+    *index = *index + count;
+    return value
 }
 
-fn read_int(binary: &str, index: usize, count: usize) -> (u64, usize) {
+fn read_int(binary: &str, index: &mut usize, count: usize) -> u64 {
     let result = read_chars(binary, index, count);
-    return (to_int(result.0), result.1)
+    return to_int(result);
 }
 
 pub fn part_a(text: String) -> u64 {
@@ -47,7 +50,7 @@ pub fn part_a(text: String) -> u64 {
         binary.push_str(to_binary(char))
     }
 
-    let (_, head) = parse_packet(&binary, 0);
+    let head = parse_packet(&binary, &mut 0);
     return sum_versions(&head);
 }
 
@@ -65,33 +68,27 @@ fn sum_versions(node: &Node) -> u64 {
     return total + node.version;
 }
 
-fn parse_packet(binary: &String, index: usize) -> (usize, Node) {
-    let (version, index) = read_int(&binary, index, 3);
-    let (type_yo, mut index) = read_int(&binary, index, 3);
+fn parse_packet(binary: &String, index: &mut usize) -> Node {
+    let version= read_int(&binary, index, 3);
+    let tipo = read_int(&binary, index, 3);
 
-    if type_yo == 4 {
+    if tipo == 4 {
         // Literal Value
-        let mut result = read_chars(&binary, index, 5);
-        let mut temp = result.0;
-        index = result.1;
-        let mut number_buffer: String = temp[1..5].into();
+        let mut buffer = read_chars(&binary, index, 5);
+        let mut number_buffer: String = buffer[1..5].into();
 
-        while temp.chars().collect::<Vec<char>>()[0] == '1' {
-            result = read_chars(&binary, index, 5);
-            temp = result.0;
-            index = result.1;
-            number_buffer.push_str(&temp[1..5]);
+        while buffer.chars().collect::<Vec<char>>()[0] == '1' {
+            buffer = read_chars(&binary, index, 5);
+            number_buffer.push_str(&buffer[1..5]);
         }
 
         let value = to_int(&number_buffer);
-        return (index, Node { version, value: value.to_string(), children: Vec::new() })
+        return Node { version, value: value.to_string(), children: Vec::new() }
     }
     else {
-        let mut result = read_chars(&binary, index, 1);
-        let len_type_id = result.0;
-        index = result.1;
+        let len_type_id = read_chars(&binary, index, 1);
 
-        let node_name: String = match type_yo {
+        let node_name: String = match tipo {
             0 => { "sum".into() }
             1 => { "product".into() }
             2 => { "minimum".into() }
@@ -104,36 +101,28 @@ fn parse_packet(binary: &String, index: usize) -> (usize, Node) {
 
         if len_type_id == "0" {
             // Fifteen bit number
-            result = read_chars(&binary, index, 15);
-
-            let length = to_int(result.0) as usize;
-            index = result.1;
-            let end_index = index + length;
+            let length = read_int(&binary, index, 15) as usize;
+            let end_index = *index + length;
             let mut children: Vec<Node> = vec![];
 
-            while index < end_index {
-                let horse_result = parse_packet(binary, index);
-                index = horse_result.0;
-                children.push(horse_result.1);
+            while *index < end_index {
+                let node = parse_packet(binary, index);
+                children.push(node);
             }
 
-            return (index, Node { version, value: node_name, children: children })
+            return Node { version, value: node_name, children: children }
         }
         else {
             // Eleven bit number
-            result = read_chars(&binary, index, 11);
-
-            let count = to_int(result.0) as usize;
-            index = result.1;
+            let count = read_int(&binary, index,11);
             let mut children: Vec<Node> = vec![];
 
             for _ in 0..count {
-                let horse_result = parse_packet(binary, index);
-                index = horse_result.0;
-                children.push(horse_result.1);
+                let node = parse_packet(binary, index);
+                children.push(node);
             }
 
-            return (index, Node { version, value: node_name, children: children })
+            return Node { version, value: node_name, children: children }
         }
     }
 }
@@ -145,7 +134,7 @@ pub fn part_b(text: String) -> u64 {
         binary.push_str(to_binary(char))
     }
 
-    let (_, head) = parse_packet(&binary, 0);
+    let head = parse_packet(&binary, &mut 0);
     return resolve_node(&head);
 }
 
