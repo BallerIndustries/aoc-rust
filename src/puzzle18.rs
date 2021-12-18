@@ -1,35 +1,55 @@
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Node {
     pub level: u32,
-    pub left_node: Box<Option<Node>>,
+    pub index: Option<usize>,
+    pub left_node: Option<usize>,
     pub left_value: Option<u32>,
-    pub right_node: Box<Option<Node>>,
+    pub right_node: Option<usize>,
     pub right_value: Option<u32>,
 }
+
+impl Node {
+    fn set_index(&mut self, value: usize) {
+        self.index = Some(value);
+    }
+}
+
+// pub struct Node<T> {
+//     parent: Option<NodeId>,
+//     previous_sibling: Option<NodeId>,
+//     next_sibling: Option<NodeId>,
+//     first_child: Option<NodeId>,
+//     last_child: Option<NodeId>,
+//
+//     /// The actual data which will be stored within the tree
+//     pub data: T,
+// }
 
 pub fn parse_node(
     line: &Vec<char>,
     start_index: usize,
     level: u32,
+    nodes: &mut Vec<Node>
 ) -> (Node, usize) {
     let mut index = start_index;
     let mut hit_comma = false;
     let mut left_value: Option<u32> = None;
     let mut right_value: Option<u32> = None;
-    let mut left_node: Box<Option<Node>> = Box::new(None);
-    let mut right_node: Box<Option<Node>> = Box::new(None);
+    let mut left_node: Option<usize> = None;
+    let mut right_node: Option<usize> = None;
 
     while index < line.len() {
         let char = line[index];
 
         if char == '[' {
-            let (node, new_index) = parse_node(line, index+1, level+1);
+            let (node, new_index) = parse_node(line, index+1, level+1, nodes);
+            nodes.push(node);
 
             if hit_comma {
-                right_node = Box::new(Some(node));
+                right_node = Some(nodes.len() - 1);
             }
             else {
-                left_node = Box::new(Some(node));
+                left_node = Some(nodes.len() - 1);
             }
 
             index = new_index;
@@ -39,6 +59,7 @@ pub fn parse_node(
         }
         else if char == ']' {
             let node = Node {
+                index: None,
                 level,
                 left_value,
                 right_value,
@@ -55,7 +76,7 @@ pub fn parse_node(
                 right_value = Some(value);
             }
             else {
-                left_value =  Some(value);
+                left_value = Some(value);
             }
         }
 
@@ -65,78 +86,89 @@ pub fn parse_node(
     panic!("This should be unreachable");
 }
 
-pub fn parse(line: &str) -> Node {
+pub fn parse(line: &str) -> Vec<Node> {
     let chars = line.chars().collect::<Vec<char>>();
-    return parse_node(&chars, 1, 0).0;
+    let mut nodes: Vec<Node> = vec![];
+    let head = parse_node(&chars, 1, 0, &mut nodes).0;
+    nodes.push(head);
+
+    for index in 0..nodes.len() {
+        nodes[index].set_index(index);
+        println!("nodes[index] = {:?}", nodes[index]);
+    }
+
+    return nodes
 }
 
-pub fn find_heavily_nested(number: Node, parent: Option<Node>) -> (Option<(Node)>, Option<Node>) {
+pub fn find_heavily_nested(index: usize, parent_index: Option<usize>, nodes: &Vec<Node>) -> (Option<usize>, Option<usize>) {
+    let number = &nodes[index];
+
     if number.level == 4 {
-        return (Some(&number), parent);
+        return (number.index, parent_index);
     }
-    if number.left_node.is_some() {
-        let node = &number.left_node.unwrap();
-        let _parent = Some(number);
-        return find_heavily_nested(node, _parent)
+
+    if let Some(left_index) = number.left_node {
+        return find_heavily_nested(left_index, Some(index), nodes);
     }
-    if number.right_node.is_some() {
-        return find_heavily_nested(&number.right_node.unwrap(), Some(number))
+
+    if let Some(right_index) = number.right_node {
+        return find_heavily_nested(right_index, Some(index), nodes);
     }
 
     return (None, None);
 }
 
-pub fn find_big_number(number: Node) -> Option<Node> {
+pub fn find_big_number(index: usize, parent_index: Option<usize>, nodes: &Vec<Node>) -> (Option<usize>, Option<usize>) {
+    let number = &nodes[index];
+
     if let Some(value) = number.left_value {
         if value >= 10 {
-            return Some(number)
+            return (Some(index), parent_index)
         }
     }
 
     if let Some(value) = number.right_value {
         if value >= 10 {
-            return Some(number)
+            return (Some(index), parent_index)
         }
     }
 
-    if let Some(left_node) = *number.left_node {
-        let result = find_big_number(left_node);
+    if let Some(left_node) = number.left_node {
+        let result = find_big_number(left_node, Some(index), nodes);
 
-        if result.is_some() {
-            return result
+        if result.0.is_some() {
+            return result;
         }
     }
 
-    if let Some(right_node) = *number.right_node {
-        let result = find_big_number(right_node);
+    if let Some(right_node) = number.right_node {
+        let result = find_big_number(right_node, Some(index), nodes);
 
-        if result.is_some() {
-            return result
+        if result.0.is_some() {
+            return result;
         }
     }
 
-    return None
+    return (None, None)
 }
 
 
 pub fn part_a(text: String) -> i32 {
-    let sailfish_numbers = text.lines().map(|l| parse(l)).collect::<Vec<Node>>();
+    let sailfish_numbers: Vec<Vec<Node>> = text.lines().map(|l| parse(l)).collect();
 
-    for number in sailfish_numbers {
-        // let big_number = find_big_number(number);
-        //
-        // if big_number.is_some() {
-        //     println!("found a big_number")
-        // }
+    for nodes in sailfish_numbers {
+        let head_index = nodes.len() - 1;
+        // let head: &Node = nodes.last().unwrap();
+        // println!("head = {:?}", head);
+
+        //let head_index = head.index.unwrap();
+        let (mut nested_index, mut parent_index) = find_heavily_nested(head_index, None, &nodes);
+        println!("nested_index = {:?} parent_index = {:?}", nested_index, parent_index);
+
+        let (mut nested_index, mut parent_index) = find_big_number(head_index, None, &nodes);
+        println!("nested_index = {:?} parent_index = {:?}", nested_index, parent_index);
 
 
-        let (heavily_nested, parent) = find_heavily_nested(number, None);
-
-        if let Some(value) = heavily_nested {
-            println!("found a heavily nested {:?}", value)
-
-
-        }
     }
 
 
@@ -221,55 +253,42 @@ mod tests {
     #[test]
     fn parse_test_1() {
         let expected = Node {
+            index: Some(0),
             level: 0,
             left_value: Some(1),
-            left_node: Box::new(None),
+            left_node: None,
             right_value: Some(2),
-            right_node: Box::new(None),
+            right_node: None,
         };
 
-        assert_eq!(parse("[1,2]"), expected);
+        assert_eq!(*parse("[1,2]").last().unwrap(), expected);
     }
 
     #[test]
     fn parse_test_2() {
-        let sub = Node {
-            level: 1,
-            left_value: Some(1),
-            left_node: Box::new(None),
-            right_value: Some(2),
-            right_node: Box::new(None),
-        };
-
         let expected = Node {
+            index: Some(1),
             level: 0,
             left_value: None,
-            left_node: Box::new(Some(sub)),
+            left_node: Some(0),
             right_value: Some(3),
-            right_node: Box::new(None),
+            right_node: None,
         };
 
-        assert_eq!(parse("[[1,2],3]"), expected);
+        assert_eq!(*parse("[[1,2],3]").last().unwrap(), expected);
     }
 
     #[test]
     fn parse_test_3() {
-        let sub = Node {
-            level: 1,
-            left_value: Some(8),
-            left_node: Box::new(None),
-            right_value: Some(7),
-            right_node: Box::new(None),
-        };
-
         let expected = Node {
+            index: Some(1),
             level: 0,
             left_value: Some(9),
-            left_node: Box::new(None),
+            left_node: None,
             right_value: None,
-            right_node: Box::new(Some(sub)),
+            right_node: Some(0),
         };
 
-        assert_eq!(parse("[9,[8,7]]"), expected);
+        assert_eq!(*parse("[9,[8,7]]").last().unwrap(), expected);
     }
 }
