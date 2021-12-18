@@ -1,4 +1,3 @@
-use std::cmp::max;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Point {
