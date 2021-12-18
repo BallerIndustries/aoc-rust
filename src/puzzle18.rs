@@ -1,12 +1,17 @@
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Node {
+    pub level: u32,
     pub left_node: Box<Option<Node>>,
     pub left_value: Option<u32>,
     pub right_node: Box<Option<Node>>,
     pub right_value: Option<u32>,
 }
 
-pub fn parse_node(line: &Vec<char>, start_index: usize) -> (Node, usize) {
+pub fn parse_node(
+    line: &Vec<char>,
+    start_index: usize,
+    level: u32,
+) -> (Node, usize) {
     let mut index = start_index;
     let mut hit_comma = false;
     let mut left_value: Option<u32> = None;
@@ -18,7 +23,7 @@ pub fn parse_node(line: &Vec<char>, start_index: usize) -> (Node, usize) {
         let char = line[index];
 
         if char == '[' {
-            let (node, new_index) = parse_node(line, index+1);
+            let (node, new_index) = parse_node(line, index+1, level+1);
 
             if hit_comma {
                 right_node = Box::new(Some(node));
@@ -34,12 +39,13 @@ pub fn parse_node(line: &Vec<char>, start_index: usize) -> (Node, usize) {
         }
         else if char == ']' {
             let node = Node {
+                level,
                 left_value,
                 right_value,
                 left_node,
                 right_node
             };
-            println!("left_value = {:?} right_value = {:?}", left_value, right_value);
+
             return (node, index)
         }
         else if char.is_digit(10) {
@@ -61,12 +67,82 @@ pub fn parse_node(line: &Vec<char>, start_index: usize) -> (Node, usize) {
 
 pub fn parse(line: &str) -> Node {
     let chars = line.chars().collect::<Vec<char>>();
-    return parse_node(&chars, 1).0;
+    return parse_node(&chars, 1, 0).0;
 }
 
-pub fn part_a(text: String) -> i32 {
-    let parsed = text.lines().map(|l| parse(l)).collect::<Vec<Node>>();
+pub fn find_heavily_nested(number: Node, parent: Option<Node>) -> (Option<(Node)>, Option<Node>) {
+    if number.level == 4 {
+        return (Some(&number), parent);
+    }
+    if number.left_node.is_some() {
+        let node = &number.left_node.unwrap();
+        let _parent = Some(number);
+        return find_heavily_nested(node, _parent)
+    }
+    if number.right_node.is_some() {
+        return find_heavily_nested(&number.right_node.unwrap(), Some(number))
+    }
 
+    return (None, None);
+}
+
+pub fn find_big_number(number: Node) -> Option<Node> {
+    if let Some(value) = number.left_value {
+        if value >= 10 {
+            return Some(number)
+        }
+    }
+
+    if let Some(value) = number.right_value {
+        if value >= 10 {
+            return Some(number)
+        }
+    }
+
+    if let Some(left_node) = *number.left_node {
+        let result = find_big_number(left_node);
+
+        if result.is_some() {
+            return result
+        }
+    }
+
+    if let Some(right_node) = *number.right_node {
+        let result = find_big_number(right_node);
+
+        if result.is_some() {
+            return result
+        }
+    }
+
+    return None
+}
+
+
+pub fn part_a(text: String) -> i32 {
+    let sailfish_numbers = text.lines().map(|l| parse(l)).collect::<Vec<Node>>();
+
+    for number in sailfish_numbers {
+        // let big_number = find_big_number(number);
+        //
+        // if big_number.is_some() {
+        //     println!("found a big_number")
+        // }
+
+
+        let (heavily_nested, parent) = find_heavily_nested(number, None);
+
+        if let Some(value) = heavily_nested {
+            println!("found a heavily nested {:?}", value)
+
+
+        }
+    }
+
+
+
+
+    println!("");
     panic!("Not implemented")
 
 
@@ -74,8 +150,6 @@ pub fn part_a(text: String) -> i32 {
     // (if any), and the pair's right value is added to the first regular number to the right of the exploding pair
     // (if any). Exploding pairs will always consist of two regular numbers. Then, the entire exploding pair
     // is replaced with the regular number 0.
-
-
 
 
     // To split a regular number, replace it with a pair; the left element of the pair should be the regular number
@@ -89,7 +163,7 @@ pub fn part_a(text: String) -> i32 {
 
 }
 
-pub fn part_b(text: String) -> i32 {
+pub fn part_b(_text: String) -> i32 {
     panic!("Not implemented")
 }
 
@@ -126,6 +200,20 @@ mod tests {
     }
 
     #[test]
+    fn example_part_a_2() {
+        assert_eq!(part_a("[[[[[9,8],1],2],3],4]".into()), 3488);
+    }
+
+    #[test]
+    fn example_part_a_3() {
+        assert_eq!(part_a("[7,[6,[5,[4,[3,2]]]]]".into()), 3488);
+    }
+
+
+
+
+
+    #[test]
     fn example_part_b() {
         assert_eq!(part_b("".into()), 0);
     }
@@ -133,6 +221,7 @@ mod tests {
     #[test]
     fn parse_test_1() {
         let expected = Node {
+            level: 0,
             left_value: Some(1),
             left_node: Box::new(None),
             right_value: Some(2),
@@ -145,6 +234,7 @@ mod tests {
     #[test]
     fn parse_test_2() {
         let sub = Node {
+            level: 1,
             left_value: Some(1),
             left_node: Box::new(None),
             right_value: Some(2),
@@ -152,6 +242,7 @@ mod tests {
         };
 
         let expected = Node {
+            level: 0,
             left_value: None,
             left_node: Box::new(Some(sub)),
             right_value: Some(3),
@@ -164,6 +255,7 @@ mod tests {
     #[test]
     fn parse_test_3() {
         let sub = Node {
+            level: 1,
             left_value: Some(8),
             left_node: Box::new(None),
             right_value: Some(7),
@@ -171,6 +263,7 @@ mod tests {
         };
 
         let expected = Node {
+            level: 0,
             left_value: Some(9),
             left_node: Box::new(None),
             right_value: None,
