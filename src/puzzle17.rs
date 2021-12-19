@@ -73,7 +73,7 @@ fn will_hit_target(
 
         // Check if we are in the trench
         if new_x >= x_start && new_x <= x_end && new_y >= y_start && new_y <= y_end {
-            println!("Hit the target using initial velocity of ({},{}) y_max = {}", _x_delta, _y_delta, y_max);
+            //println!("Hit the target using initial velocity of ({},{}) y_max = {}", _x_delta, _y_delta, y_max);
             return (true, y_max);
         }
 
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn puzzle_part_a() {
         let text = read_all_text(FILENAME);
-        assert_eq!(part_a(text), 0)
+        assert_eq!(part_a(text), 11175)
     }
 
     #[test]

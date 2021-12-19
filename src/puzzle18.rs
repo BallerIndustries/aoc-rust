@@ -2,6 +2,7 @@
 pub struct Node {
     pub level: u32,
     pub index: Option<usize>,
+    pub parent_index: Option<usize>,
     pub left_node: Option<usize>,
     pub left_value: Option<u32>,
     pub right_node: Option<usize>,
@@ -9,21 +10,46 @@ pub struct Node {
 }
 
 impl Node {
+    fn split_left(&mut self, index: usize) {
+        self.left_value = None;
+        self.left_node = Some(index);
+    }
+
+    fn split_right(&mut self, index: usize) {
+        self.right_value = None;
+        self.right_node = Some(index);
+    }
+
     fn set_index(&mut self, value: usize) {
         self.index = Some(value);
     }
-}
 
-// pub struct Node<T> {
-//     parent: Option<NodeId>,
-//     previous_sibling: Option<NodeId>,
-//     next_sibling: Option<NodeId>,
-//     first_child: Option<NodeId>,
-//     last_child: Option<NodeId>,
-//
-//     /// The actual data which will be stored within the tree
-//     pub data: T,
-// }
+    fn set_parent_index(&mut self, value: usize) {
+        self.parent_index = Some(value);
+    }
+
+    fn increment_left(&mut self, value: u32) {
+        self.left_value = Some(self.left_value.unwrap() + value);
+    }
+
+    fn increment_right(&mut self, value: u32) {
+        self.right_value = Some(self.right_value.unwrap() + value);
+    }
+
+    fn zero_out_child(&mut self, child_index: usize) {
+        if self.left_node.is_some() && self.left_node.unwrap() == child_index {
+            self.left_node = None;
+            self.left_value = Some(0);
+        }
+        else if self.right_node.is_some() && self.right_node.unwrap() == child_index {
+            self.right_node = None;
+            self.right_value = Some(0);
+        }
+        else {
+            panic!("Oh no!");
+        }
+    }
+}
 
 pub fn parse_node(
     line: &Vec<char>,
@@ -59,6 +85,7 @@ pub fn parse_node(
         }
         else if char == ']' {
             let node = Node {
+                parent_index: None,
                 index: None,
                 level,
                 left_value,
@@ -92,107 +119,218 @@ pub fn parse(line: &str) -> Vec<Node> {
     let head = parse_node(&chars, 1, 0, &mut nodes).0;
     nodes.push(head);
 
+    // Set index
     for index in 0..nodes.len() {
         nodes[index].set_index(index);
-        println!("nodes[index] = {:?}", nodes[index]);
+    }
+
+    // Set parent index
+    for index in 0..nodes.len() {
+        if let Some(left_index) = nodes[index].left_node {
+            nodes[left_index].set_parent_index(index);
+        }
+        if let Some(right_index) = nodes[index].right_node {
+            nodes[right_index].set_parent_index(index);
+        }
     }
 
     return nodes
 }
 
-pub fn find_heavily_nested(index: usize, parent_index: Option<usize>, nodes: &Vec<Node>) -> (Option<usize>, Option<usize>) {
+pub fn find_heavily_nested(index: usize, nodes: &Vec<Node>) -> Option<usize> {
     let number = &nodes[index];
 
     if number.level == 4 {
-        return (number.index, parent_index);
+        return number.index;
     }
 
     if let Some(left_index) = number.left_node {
-        return find_heavily_nested(left_index, Some(index), nodes);
+        return find_heavily_nested(left_index, nodes);
     }
 
     if let Some(right_index) = number.right_node {
-        return find_heavily_nested(right_index, Some(index), nodes);
+        return find_heavily_nested(right_index, nodes);
     }
 
-    return (None, None);
+    return None;
 }
 
-pub fn find_big_number(index: usize, parent_index: Option<usize>, nodes: &Vec<Node>) -> (Option<usize>, Option<usize>) {
+pub fn find_big_number(index: usize, nodes: &Vec<Node>) -> Option<usize> {
     let number = &nodes[index];
 
     if let Some(value) = number.left_value {
         if value >= 10 {
-            return (Some(index), parent_index)
+            return Some(index)
         }
     }
 
     if let Some(value) = number.right_value {
         if value >= 10 {
-            return (Some(index), parent_index)
+            return Some(index)
         }
     }
 
     if let Some(left_node) = number.left_node {
-        let result = find_big_number(left_node, Some(index), nodes);
+        let result = find_big_number(left_node, nodes);
 
-        if result.0.is_some() {
+        if result.is_some() {
             return result;
         }
     }
 
     if let Some(right_node) = number.right_node {
-        let result = find_big_number(right_node, Some(index), nodes);
+        let result = find_big_number(right_node, nodes);
 
-        if result.0.is_some() {
+        if result.is_some() {
             return result;
         }
     }
 
-    return (None, None)
+    return None
 }
 
+pub fn split(index: usize, nodes: &mut Vec<Node>) {
+    let length = &mut nodes.len();
+    let mut node = &mut nodes[index];
+
+    if let Some(value) = node.left_value {
+        if value >= 10 {
+            let left_value = value / 2;
+            let right_value = left_value + (value % 2);
+
+            let child = Node {
+                level: node.level + 1,
+                index: Some(*length),
+                parent_index: node.index,
+                left_node: None,
+                left_value: Some(left_value),
+                right_node: None,
+                right_value: Some(right_value),
+            };
+
+            node.split_left(*length);
+            nodes.push(child);
+        }
+    }
+    else if let Some(value) = node.right_value {
+        if value >= 10 {
+            let left_value = value / 2;
+            let right_value = left_value + (value % 2);
+
+            let child = Node {
+                level: node.level + 1,
+                index: Some(*length),
+                parent_index: node.index,
+                left_node: None,
+                left_value: Some(left_value),
+                right_node: None,
+                right_value: Some(right_value),
+            };
+
+            node.split_right(*length);
+            nodes.push(child);
+        }
+    }
+    else {
+        panic!("FUck!");
+    }
+}
+
+pub fn explode(index: usize, nodes: &mut Vec<Node>) {
+    let start_index = index;
+    let left_value = nodes[index].left_value.unwrap();
+    let right_value = nodes[index].right_value.unwrap();
+
+    // Explode to the left
+    let mut current_index: Option<usize> = nodes[index].parent_index;
+
+    loop {
+        let i = current_index.unwrap();
+
+        if nodes[i].left_value.is_some() {
+            nodes[i].increment_left(left_value);
+            break;
+        }
+
+        current_index = nodes[current_index.unwrap()].parent_index;
+
+        if current_index.is_none() {
+            break
+        }
+    }
+
+    // Explode to the right
+    let mut current_index: Option<usize> = nodes[index].parent_index;
+
+    loop {
+        let i = current_index.unwrap();
+
+        if nodes[i].right_value.is_some() {
+            nodes[i].increment_right(right_value);
+            break;
+        }
+
+        current_index = nodes[current_index.unwrap()].parent_index;
+
+        if current_index.is_none() {
+            break
+        }
+    }
+
+    // Then, the entire exploding pair is replaced with the regular number 0
+    let parent_index = nodes[start_index].parent_index.unwrap().clone();
+    nodes[parent_index].zero_out_child(start_index);
+
+
+}
 
 pub fn part_a(text: String) -> i32 {
-    let sailfish_numbers: Vec<Vec<Node>> = text.lines().map(|l| parse(l)).collect();
+    let mut sailfish_numbers: Vec<Vec<Node>> = text.lines().map(|l| parse(l)).collect();
 
-    for nodes in sailfish_numbers {
-        let head_index = nodes.len() - 1;
-        // let head: &Node = nodes.last().unwrap();
-        // println!("head = {:?}", head);
+    //for nodes in sailfish_numbers {
+    for index in 0..sailfish_numbers.len() {
+        loop {
+            let mut nodes = &mut sailfish_numbers[index];
 
-        //let head_index = head.index.unwrap();
-        let (mut nested_index, mut parent_index) = find_heavily_nested(head_index, None, &nodes);
-        println!("nested_index = {:?} parent_index = {:?}", nested_index, parent_index);
+            let head_index = nodes.len() - 1;
 
-        let (mut nested_index, mut parent_index) = find_big_number(head_index, None, &nodes);
-        println!("nested_index = {:?} parent_index = {:?}", nested_index, parent_index);
+            let result = find_heavily_nested(head_index, &nodes);
+            println!("result = {:?}", result);
+
+            if let Some(heavily_nested) = result {
+                explode(heavily_nested, &mut nodes);
+                continue;
+            }
+
+            let result = find_big_number(head_index, &nodes);
+            println!("result = {:?}", result);
+
+            if let Some(big_number_index) = result {
+                split(big_number_index, &mut nodes);
+                continue
+            }
+
+            break
+        }
 
 
     }
 
-
-
-
     println!("");
     panic!("Not implemented")
-
 
     // To explode a pair, the pair's left value is added to the first regular number to the left of the exploding pair
     // (if any), and the pair's right value is added to the first regular number to the right of the exploding pair
     // (if any). Exploding pairs will always consist of two regular numbers. Then, the entire exploding pair
     // is replaced with the regular number 0.
 
-
     // To split a regular number, replace it with a pair; the left element of the pair should be the regular number
     // divided by two and rounded down, while the right element of the pair should be the regular number divided by
     // two and rounded up. For example, 10 becomes [5,5], 11 becomes [5,6], 12 becomes [6,6], and so on.
 
-
     // To check whether it's the right answer, the snailfish teacher only checks the magnitude of the final sum.
     // The magnitude of a pair is 3 times the magnitude of its left element plus 2 times the magnitude of its right element.
     // The magnitude of a regular number is just that number.
-
 }
 
 pub fn part_b(_text: String) -> i32 {
@@ -241,10 +379,6 @@ mod tests {
         assert_eq!(part_a("[7,[6,[5,[4,[3,2]]]]]".into()), 3488);
     }
 
-
-
-
-
     #[test]
     fn example_part_b() {
         assert_eq!(part_b("".into()), 0);
@@ -253,6 +387,7 @@ mod tests {
     #[test]
     fn parse_test_1() {
         let expected = Node {
+            parent_index: None,
             index: Some(0),
             level: 0,
             left_value: Some(1),
@@ -267,6 +402,7 @@ mod tests {
     #[test]
     fn parse_test_2() {
         let expected = Node {
+            parent_index: None,
             index: Some(1),
             level: 0,
             left_value: None,
@@ -281,6 +417,7 @@ mod tests {
     #[test]
     fn parse_test_3() {
         let expected = Node {
+            parent_index: None,
             index: Some(1),
             level: 0,
             left_value: Some(9),
