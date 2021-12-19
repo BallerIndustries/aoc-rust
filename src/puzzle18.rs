@@ -113,6 +113,30 @@ pub fn parse_node(
     panic!("This should be unreachable");
 }
 
+pub fn debug(index: usize, nodes: &Vec<Node>) {
+    let head = &nodes[index];
+
+    print!("[");
+
+    if head.left_value.is_some() {
+        print!("{}", head.left_value.unwrap());
+    }
+    else {
+        debug(head.left_node.unwrap(), nodes)
+    }
+
+    print!(",");
+
+    if head.right_value.is_some() {
+        print!("{}", head.right_value.unwrap());
+    }
+    else {
+        debug(head.right_node.unwrap(), nodes)
+    }
+
+    print!("]");
+}
+
 pub fn parse(line: &str) -> Vec<Node> {
     let chars = line.chars().collect::<Vec<char>>();
     let mut nodes: Vec<Node> = vec![];
@@ -280,8 +304,6 @@ pub fn explode(index: usize, nodes: &mut Vec<Node>) {
     // Then, the entire exploding pair is replaced with the regular number 0
     let parent_index = nodes[start_index].parent_index.unwrap().clone();
     nodes[parent_index].zero_out_child(start_index);
-
-
 }
 
 pub fn part_a(text: String) -> i32 {
@@ -308,6 +330,8 @@ pub fn part_a(text: String) -> i32 {
                 continue
             }
 
+            debug(head_index, nodes);
+            print!("\n");
             break
         }
     }
@@ -373,6 +397,16 @@ mod tests {
     #[test]
     fn example_part_a_3() {
         assert_eq!(part_a("[7,[6,[5,[4,[3,2]]]]]".into()), 3488);
+    }
+
+    #[test]
+    fn example_part_a_4() {
+        assert_eq!(part_a("[[6,[5,[4,[3,2]]]],1]".into()), 3488);
+    }
+
+    #[test]
+    fn example_part_a_5() {
+        assert_eq!(part_a("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]".into()), 3488);
     }
 
     #[test]
