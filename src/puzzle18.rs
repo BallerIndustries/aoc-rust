@@ -287,11 +287,9 @@ pub fn explode(index: usize, nodes: &mut Vec<Node>) {
 pub fn part_a(text: String) -> i32 {
     let mut sailfish_numbers: Vec<Vec<Node>> = text.lines().map(|l| parse(l)).collect();
 
-    //for nodes in sailfish_numbers {
     for index in 0..sailfish_numbers.len() {
         loop {
             let mut nodes = &mut sailfish_numbers[index];
-
             let head_index = nodes.len() - 1;
 
             let result = find_heavily_nested(head_index, &nodes);
@@ -312,8 +310,6 @@ pub fn part_a(text: String) -> i32 {
 
             break
         }
-
-
     }
 
     println!("");
