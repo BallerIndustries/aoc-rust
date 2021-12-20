@@ -132,7 +132,7 @@ pub fn reduce(_nodes: &mut Vec<Node>) -> &mut Vec<Node> {
         println!("result = {:?}", result);
 
         if let Some(heavily_nested) = result {
-            explode(heavily_nested, &mut nodes);
+            explode_v2(head_index, heavily_nested, &mut nodes);
             continue;
         }
 
@@ -295,51 +295,142 @@ pub fn split(index: usize, nodes: &mut Vec<Node>) {
     }
 }
 
-pub fn explode(index: usize, nodes: &mut Vec<Node>) {
-    let start_index = index;
-    let left_value = nodes[index].left_value.unwrap();
-    let right_value = nodes[index].right_value.unwrap();
+pub fn explode_v2(
+    start_index: usize,
+    target_index: usize,
+    nodes: &mut Vec<Node>
+) {
+    let mut stack: Vec<usize> = Vec::new();
+    let mut node_index: Option<usize> = Some(start_index);
+    let mut hit_target = false;
 
-    // Explode to the left
-    let mut current_index: Option<usize> = nodes[index].parent_index;
+    let mut before_index: Option<usize> = None;
+    let mut before_is_left = false;
+    let mut after_index: Option<usize> = None;
+    let mut after_is_left = false;
 
-    loop {
-        let i = current_index.unwrap();
-
-        if nodes[i].left_value.is_some() {
-            nodes[i].increment_left(left_value);
-            break;
+    while !stack.is_empty() || node_index.is_some() {
+        if node_index.is_some() {
+            stack.push(node_index.unwrap());
+            node_index = nodes[node_index.unwrap()].left_node;
         }
+        else {
+            node_index = Some(stack.pop().unwrap());
+            let unwrapped_node_index = node_index.unwrap();
 
-        current_index = nodes[current_index.unwrap()].parent_index;
+            if unwrapped_node_index == target_index {
+                hit_target = true;
+            }
+            else {
+                let node = &nodes[unwrapped_node_index];
 
-        if current_index.is_none() {
-            break
+                if let Some(left_value) = node.left_value {
+                    if !hit_target {
+                        before_index = node_index;
+                        before_is_left = true;
+                    }
+                    else {
+                        after_index = node_index;
+                        after_is_left = true;
+                        break;
+                    }
+
+                    println!("{}", left_value);
+                }
+                if let Some(right_value) = node.right_value {
+                    if !hit_target {
+                        before_index = node_index;
+                        before_is_left = false;
+                    }
+                    else {
+                        after_index = node_index;
+                        after_is_left = false;
+                        break;
+                    }
+
+                    println!("{}", right_value);
+                }
+            }
+
+
+
+            node_index = nodes[unwrapped_node_index].right_node;
         }
     }
 
-    // Explode to the right
-    let mut current_index: Option<usize> = nodes[index].parent_index;
+    println!("Hi Angus");
 
-    loop {
-        let i = current_index.unwrap();
+    let left_value = nodes[target_index].left_value.unwrap();
+    let right_value = nodes[target_index].right_value.unwrap();
 
-        if nodes[i].right_value.is_some() {
-            nodes[i].increment_right(right_value);
-            break;
+    if before_index.is_some() {
+        if before_is_left {
+            nodes[before_index.unwrap()].increment_left(left_value)
         }
+        else {
+            nodes[before_index.unwrap()].increment_right(left_value)
+        }
+    }
 
-        current_index = nodes[current_index.unwrap()].parent_index;
-
-        if current_index.is_none() {
-            break
+    if after_index.is_some() {
+        if after_is_left {
+            nodes[after_index.unwrap()].increment_left(right_value)
+        }
+        else {
+            nodes[after_index.unwrap()].increment_right(right_value)
         }
     }
 
     // Then, the entire exploding pair is replaced with the regular number 0
-    let parent_index = nodes[start_index].parent_index.unwrap().clone();
-    nodes[parent_index].zero_out_child(start_index);
+    let parent_index = nodes[target_index].parent_index.unwrap().clone();
+    nodes[parent_index].zero_out_child(target_index);
 }
+
+// pub fn explode(index: usize, nodes: &mut Vec<Node>) {
+//     let start_index = index;
+//     let left_value = nodes[index].left_value.unwrap();
+//     let right_value = nodes[index].right_value.unwrap();
+//
+//     // Explode to the left
+//     let mut current_index: Option<usize> = nodes[index].parent_index;
+//
+//     loop {
+//         let i = current_index.unwrap();
+//
+//         if nodes[i].left_value.is_some() {
+//             nodes[i].increment_left(left_value);
+//             break;
+//         }
+//
+//         current_index = nodes[current_index.unwrap()].parent_index;
+//
+//         if current_index.is_none() {
+//             break
+//         }
+//     }
+//
+//     // Explode to the right
+//     let mut current_index: Option<usize> = nodes[index].parent_index;
+//
+//     loop {
+//         let i = current_index.unwrap();
+//
+//         if nodes[i].right_value.is_some() {
+//             nodes[i].increment_right(right_value);
+//             break;
+//         }
+//
+//         current_index = nodes[current_index.unwrap()].parent_index;
+//
+//         if current_index.is_none() {
+//             break
+//         }
+//     }
+//
+//     // Then, the entire exploding pair is replaced with the regular number 0
+//     let parent_index = nodes[start_index].parent_index.unwrap().clone();
+//     nodes[parent_index].zero_out_child(start_index);
+// }
 
 pub fn part_a(text: String) -> i32 {
     let mut sailfish_numbers: Vec<Vec<Node>> = text.lines().map(|l| parse(l)).collect();
@@ -403,9 +494,9 @@ mod tests {
 
     #[test]
     fn explosion_reducing_examples() {
-        // assert_eq!(reduce_and_render("[[[[[9,8],1],2],3],4]".into()), "[[[[0,9],2],3],4]");
-        // assert_eq!(reduce_and_render("[7,[6,[5,[4,[3,2]]]]]".into()), "[7,[6,[5,[7,0]]]]");
-        // assert_eq!(reduce_and_render("[[6,[5,[4,[3,2]]]],1]".into()), "[[6,[5,[7,0]]],3]");
+        assert_eq!(reduce_and_render("[[[[[9,8],1],2],3],4]".into()), "[[[[0,9],2],3],4]");
+        assert_eq!(reduce_and_render("[7,[6,[5,[4,[3,2]]]]]".into()), "[7,[6,[5,[7,0]]]]");
+        assert_eq!(reduce_and_render("[[6,[5,[4,[3,2]]]],1]".into()), "[[6,[5,[7,0]]],3]");
         assert_eq!(reduce_and_render("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]".into()), "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]");
         // assert_eq!(reduce_and_render("".into()), "");
         // assert_eq!(reduce_and_render("".into()), "");
