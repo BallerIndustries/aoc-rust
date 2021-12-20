@@ -113,28 +113,63 @@ pub fn parse_node(
     panic!("This should be unreachable");
 }
 
-pub fn debug(index: usize, nodes: &Vec<Node>) {
+pub fn reduce_and_render(line: &str) -> String {
+    let mut nodes = &mut parse(line);
+    let head_index = nodes.len() - 1;
+    let reduced = reduce(&mut nodes);
+    let mut buffer = &mut "".into();
+    debug(head_index, reduced, buffer);
+
+    return buffer.clone();
+}
+
+pub fn reduce(_nodes: &mut Vec<Node>) -> &mut Vec<Node> {
+    let mut nodes = _nodes;
+    let head_index = nodes.len() - 1;
+
+    loop {
+        let result = find_heavily_nested(head_index, &nodes);
+        println!("result = {:?}", result);
+
+        if let Some(heavily_nested) = result {
+            explode(heavily_nested, &mut nodes);
+            continue;
+        }
+
+        let result = find_big_number(head_index, &nodes);
+        println!("result = {:?}", result);
+
+        if let Some(big_number_index) = result {
+            split(big_number_index, &mut nodes);
+            continue
+        }
+
+        return nodes;
+    }
+}
+
+pub fn debug(index: usize, nodes: &Vec<Node>, buffer: &mut String) {
     let head = &nodes[index];
 
-    print!("[");
+    buffer.push('[');
 
     if head.left_value.is_some() {
-        print!("{}", head.left_value.unwrap());
+        buffer.push_str(&head.left_value.unwrap().to_string())
     }
     else {
-        debug(head.left_node.unwrap(), nodes)
+        debug(head.left_node.unwrap(), nodes, buffer)
     }
 
-    print!(",");
+    buffer.push(',');
 
     if head.right_value.is_some() {
-        print!("{}", head.right_value.unwrap());
+        buffer.push_str(&head.right_value.unwrap().to_string())
     }
     else {
-        debug(head.right_node.unwrap(), nodes)
+        debug(head.right_node.unwrap(), nodes, buffer)
     }
 
-    print!("]");
+    buffer.push(']');
 }
 
 pub fn parse(line: &str) -> Vec<Node> {
@@ -310,30 +345,7 @@ pub fn part_a(text: String) -> i32 {
     let mut sailfish_numbers: Vec<Vec<Node>> = text.lines().map(|l| parse(l)).collect();
 
     for index in 0..sailfish_numbers.len() {
-        loop {
-            let mut nodes = &mut sailfish_numbers[index];
-            let head_index = nodes.len() - 1;
-
-            let result = find_heavily_nested(head_index, &nodes);
-            println!("result = {:?}", result);
-
-            if let Some(heavily_nested) = result {
-                explode(heavily_nested, &mut nodes);
-                continue;
-            }
-
-            let result = find_big_number(head_index, &nodes);
-            println!("result = {:?}", result);
-
-            if let Some(big_number_index) = result {
-                split(big_number_index, &mut nodes);
-                continue
-            }
-
-            debug(head_index, nodes);
-            print!("\n");
-            break
-        }
+        let nodes = reduce(&mut sailfish_numbers[index]);
     }
 
     println!("");
@@ -390,8 +402,15 @@ mod tests {
     }
 
     #[test]
-    fn example_part_a_2() {
-        assert_eq!(part_a("[[[[[9,8],1],2],3],4]".into()), 3488);
+    fn explosion_reducing_examples() {
+        // assert_eq!(reduce_and_render("[[[[[9,8],1],2],3],4]".into()), "[[[[0,9],2],3],4]");
+        // assert_eq!(reduce_and_render("[7,[6,[5,[4,[3,2]]]]]".into()), "[7,[6,[5,[7,0]]]]");
+        // assert_eq!(reduce_and_render("[[6,[5,[4,[3,2]]]],1]".into()), "[[6,[5,[7,0]]],3]");
+        assert_eq!(reduce_and_render("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]".into()), "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]");
+        // assert_eq!(reduce_and_render("".into()), "");
+        // assert_eq!(reduce_and_render("".into()), "");
+        // assert_eq!(reduce_and_render("".into()), "");
+        // assert_eq!(reduce_and_render("".into()), "");
     }
 
     #[test]
