@@ -116,18 +116,21 @@ pub fn parse_node(
 pub fn reduce_and_render(line: &str) -> String {
     let mut nodes = &mut parse(line);
     let head_index = nodes.len() - 1;
-    let reduced = reduce(&mut nodes);
+    reduce(&mut nodes);
+
     let mut buffer = &mut "".into();
-    debug(head_index, reduced, buffer);
+    debug(head_index, nodes, buffer);
 
     return buffer.clone();
 }
 
-pub fn reduce(_nodes: &mut Vec<Node>) -> &mut Vec<Node> {
+pub fn reduce(_nodes: &mut Vec<Node>) {
     let mut nodes = _nodes;
     let head_index = nodes.len() - 1;
+    let mut count = 0;
 
     loop {
+        count += 1;
         let result = find_heavily_nested(head_index, &nodes);
         println!("result = {:?}", result);
 
@@ -144,7 +147,8 @@ pub fn reduce(_nodes: &mut Vec<Node>) -> &mut Vec<Node> {
             continue
         }
 
-        return nodes;
+        println!("count = {}", count);
+        break;
     }
 }
 
@@ -198,17 +202,26 @@ pub fn parse(line: &str) -> Vec<Node> {
 
 pub fn find_heavily_nested(index: usize, nodes: &Vec<Node>) -> Option<usize> {
     let number = &nodes[index];
+    println!("find_heavily_nested() index = {}", index);
 
     if number.level == 4 {
         return number.index;
     }
 
     if let Some(left_index) = number.left_node {
-        return find_heavily_nested(left_index, nodes);
+        let result =  find_heavily_nested(left_index, nodes);
+
+        if result.is_some() {
+            return result
+        }
     }
 
     if let Some(right_index) = number.right_node {
-        return find_heavily_nested(right_index, nodes);
+        let result =  find_heavily_nested(right_index, nodes);
+
+        if result.is_some() {
+            return result
+        }
     }
 
     return None;
@@ -335,7 +348,7 @@ pub fn explode_v2(
                         break;
                     }
 
-                    println!("{}", left_value);
+                    //println!("{}", left_value);
                 }
                 if let Some(right_value) = node.right_value {
                     if !hit_target {
@@ -348,7 +361,7 @@ pub fn explode_v2(
                         break;
                     }
 
-                    println!("{}", right_value);
+                    //println!("{}", right_value);
                 }
             }
 
@@ -358,7 +371,7 @@ pub fn explode_v2(
         }
     }
 
-    println!("Hi Angus");
+    //println!("Hi Angus");
 
     let left_value = nodes[target_index].left_value.unwrap();
     let right_value = nodes[target_index].right_value.unwrap();
@@ -497,11 +510,7 @@ mod tests {
         assert_eq!(reduce_and_render("[[[[[9,8],1],2],3],4]".into()), "[[[[0,9],2],3],4]");
         assert_eq!(reduce_and_render("[7,[6,[5,[4,[3,2]]]]]".into()), "[7,[6,[5,[7,0]]]]");
         assert_eq!(reduce_and_render("[[6,[5,[4,[3,2]]]],1]".into()), "[[6,[5,[7,0]]],3]");
-        assert_eq!(reduce_and_render("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]".into()), "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]");
-        // assert_eq!(reduce_and_render("".into()), "");
-        // assert_eq!(reduce_and_render("".into()), "");
-        // assert_eq!(reduce_and_render("".into()), "");
-        // assert_eq!(reduce_and_render("".into()), "");
+        assert_eq!(reduce_and_render("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]".into()), "[[3,[2,[8,0]]],[9,[5,[7,0]]]]");
     }
 
     #[test]
