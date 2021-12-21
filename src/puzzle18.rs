@@ -406,7 +406,7 @@ pub fn explode(
 }
 
 pub fn part_a(text: String) -> i32 {
-    let mut sailfish_numbers: Vec<Vec<Node>> = text.lines()
+    let sailfish_numbers: Vec<Vec<Node>> = text.lines()
         .map(|l| parse(l))
         .collect();
 

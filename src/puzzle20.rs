@@ -11,6 +11,19 @@ pub fn part_a(text: String) -> i32 {
     let algo: Vec<char> = tmp[0].chars().collect();
     let mut image_grid: HashMap<Point, char> = parse_grid(tmp[1]);
 
+    image_grid = enhance(&image_grid, &algo, '0');
+    //debug(&image_grid);
+    image_grid = enhance(&image_grid, &algo, '1');
+    //debug(&image_grid);
+
+    return image_grid.values().filter(|it| **it == '#').count() as i32;
+}
+
+pub fn part_b(text: String) -> i32 {
+    let tmp: Vec<&str> = text.split("\n\n").collect();
+    let algo: Vec<char> = tmp[0].chars().collect();
+    let mut image_grid: HashMap<Point, char> = parse_grid(tmp[1]);
+
     for _ in 0..25 {
         image_grid = enhance(&image_grid, &algo, '0');
         //debug(&image_grid);
@@ -18,11 +31,10 @@ pub fn part_a(text: String) -> i32 {
         //debug(&image_grid);
     }
 
-
-
     return image_grid.values().filter(|it| **it == '#').count() as i32;
 }
 
+#[allow(dead_code)]
 fn debug(grid: &HashMap<Point, char>) {
     let min_x = grid.keys().map(|it| it.x).min().unwrap();
     let max_x = grid.keys().map(|it| it.x).max().unwrap();
@@ -110,10 +122,6 @@ fn parse_grid(text: &str) -> HashMap<Point, char> {
     return grid
 }
 
-pub fn part_b(text: String) -> i32 {
-    panic!("Not implemented")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -124,28 +132,12 @@ mod tests {
     fn puzzle_part_a() {
         // Not 8249
         let text = read_all_text(FILENAME);
-        assert_eq!(part_a(text), 0)
+        assert_eq!(part_a(text), 5419)
     }
 
     #[test]
     fn puzzle_part_b() {
         let text = read_all_text(FILENAME);
-        assert_eq!(part_b(text), 0)
-    }
-
-    #[test]
-    fn example_part_a() {
-        assert_eq!(part_a("..#.#..#####.#.#.#.###.##.....###.##.#..###.####..#####..#....#..#..##..###..######.###...####..#..#####..##..#.#####...##.#.#..#.##..#.#......#.###.######.###.####...#.##.##..#..#..#####.....#.#....###..#.##......#.....#..#..#..##..#...##.######.####.####.#.#...#.......#..#.#.#...####.##.#......#..#...##.#.##..#...##.#.##..###.#......#.#.......#.#.#.####.###.##...#.....####.#..#..#.##.#....##..#.####....##...##..#...#......#.#.......#.......##..####..#...#.#.#...##..#.#..###..#####........#..####......#..#
-
-#..#.
-#....
-##..#
-..#..
-..###".into()), 35);
-    }
-
-    #[test]
-    fn example_part_b() {
-        assert_eq!(part_b("".into()), 0);
+        assert_eq!(part_b(text), 17325)
     }
 }
