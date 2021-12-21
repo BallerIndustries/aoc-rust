@@ -10,6 +10,10 @@ pub struct Node {
 }
 
 impl Node {
+    fn set_level(&mut self, level: u32) {
+        self.level = level;
+    }
+
     fn split_left(&mut self, index: usize) {
         self.left_value = None;
         self.left_node = Some(index);
@@ -26,6 +30,14 @@ impl Node {
 
     fn set_parent_index(&mut self, value: usize) {
         self.parent_index = Some(value);
+    }
+
+    fn set_left_index(&mut self, index: usize) {
+        self.left_node = Some(index)
+    }
+
+    fn set_right_index(&mut self, index: usize) {
+        self.right_node = Some(index)
     }
 
     fn increment_left(&mut self, value: u32) {
@@ -46,7 +58,7 @@ impl Node {
             self.right_value = Some(0);
         }
         else {
-            panic!("Oh no!");
+            panic!("Failed to find a child node with child_index = {}", child_index);
         }
     }
 }
@@ -116,17 +128,16 @@ pub fn parse_node(
 pub fn reduce_and_render(line: &str) -> String {
     let mut nodes = &mut parse(line);
     let head_index = nodes.len() - 1;
-    reduce(&mut nodes);
+    reduce(&mut nodes, head_index);
 
-    let mut buffer = &mut "".into();
-    debug(head_index, nodes, buffer);
+    let buffer = &mut "".into();
+    render(head_index, nodes, buffer);
 
     return buffer.clone();
 }
 
-pub fn reduce(_nodes: &mut Vec<Node>) {
+pub fn reduce(_nodes: &mut Vec<Node>, head_index: usize) {
     let mut nodes = _nodes;
-    let head_index = nodes.len() - 1;
     let mut count = 0;
 
     loop {
@@ -135,7 +146,7 @@ pub fn reduce(_nodes: &mut Vec<Node>) {
         println!("result = {:?}", result);
 
         if let Some(heavily_nested) = result {
-            explode_v2(head_index, heavily_nested, &mut nodes);
+            explode(head_index, heavily_nested, &mut nodes);
             continue;
         }
 
@@ -152,7 +163,7 @@ pub fn reduce(_nodes: &mut Vec<Node>) {
     }
 }
 
-pub fn debug(index: usize, nodes: &Vec<Node>, buffer: &mut String) {
+pub fn render(index: usize, nodes: &Vec<Node>, buffer: &mut String) {
     let head = &nodes[index];
 
     buffer.push('[');
@@ -161,7 +172,7 @@ pub fn debug(index: usize, nodes: &Vec<Node>, buffer: &mut String) {
         buffer.push_str(&head.left_value.unwrap().to_string())
     }
     else {
-        debug(head.left_node.unwrap(), nodes, buffer)
+        render(head.left_node.unwrap(), nodes, buffer)
     }
 
     buffer.push(',');
@@ -170,13 +181,14 @@ pub fn debug(index: usize, nodes: &Vec<Node>, buffer: &mut String) {
         buffer.push_str(&head.right_value.unwrap().to_string())
     }
     else {
-        debug(head.right_node.unwrap(), nodes, buffer)
+        render(head.right_node.unwrap(), nodes, buffer)
     }
 
     buffer.push(']');
 }
 
 pub fn parse(line: &str) -> Vec<Node> {
+    println!("parse() line = {}", line);
     let chars = line.chars().collect::<Vec<char>>();
     let mut nodes: Vec<Node> = vec![];
     let head = parse_node(&chars, 1, 0, &mut nodes).0;
@@ -263,52 +275,50 @@ pub fn find_big_number(index: usize, nodes: &Vec<Node>) -> Option<usize> {
 
 pub fn split(index: usize, nodes: &mut Vec<Node>) {
     let length = &mut nodes.len();
-    let mut node = &mut nodes[index];
+    let node = &mut nodes[index];
 
-    if let Some(value) = node.left_value {
-        if value >= 10 {
-            let left_value = value / 2;
-            let right_value = left_value + (value % 2);
+    if node.left_value.is_some() && node.left_value.unwrap() >= 10 {
+        let value = node.left_value.unwrap();
+        let left_value = value / 2;
+        let right_value = left_value + (value % 2);
 
-            let child = Node {
-                level: node.level + 1,
-                index: Some(*length),
-                parent_index: node.index,
-                left_node: None,
-                left_value: Some(left_value),
-                right_node: None,
-                right_value: Some(right_value),
-            };
+        let child = Node {
+            level: node.level + 1,
+            index: Some(*length),
+            parent_index: node.index,
+            left_node: None,
+            left_value: Some(left_value),
+            right_node: None,
+            right_value: Some(right_value),
+        };
 
-            node.split_left(*length);
-            nodes.push(child);
-        }
+        node.split_left(*length);
+        nodes.push(child);
     }
-    else if let Some(value) = node.right_value {
-        if value >= 10 {
-            let left_value = value / 2;
-            let right_value = left_value + (value % 2);
+    else if node.right_value.is_some() && node.right_value.unwrap() >= 10 {
+        let value = node.right_value.unwrap();
+        let left_value = value / 2;
+        let right_value = left_value + (value % 2);
 
-            let child = Node {
-                level: node.level + 1,
-                index: Some(*length),
-                parent_index: node.index,
-                left_node: None,
-                left_value: Some(left_value),
-                right_node: None,
-                right_value: Some(right_value),
-            };
+        let child = Node {
+            level: node.level + 1,
+            index: Some(*length),
+            parent_index: node.index,
+            left_node: None,
+            left_value: Some(left_value),
+            right_node: None,
+            right_value: Some(right_value),
+        };
 
-            node.split_right(*length);
-            nodes.push(child);
-        }
+        node.split_right(*length);
+        nodes.push(child);
     }
     else {
         panic!("FUck!");
     }
 }
 
-pub fn explode_v2(
+pub fn explode(
     start_index: usize,
     target_index: usize,
     nodes: &mut Vec<Node>
@@ -337,7 +347,7 @@ pub fn explode_v2(
             else {
                 let node = &nodes[unwrapped_node_index];
 
-                if let Some(left_value) = node.left_value {
+                if let Some(_) = node.left_value {
                     if !hit_target {
                         before_index = node_index;
                         before_is_left = true;
@@ -350,7 +360,7 @@ pub fn explode_v2(
 
                     //println!("{}", left_value);
                 }
-                if let Some(right_value) = node.right_value {
+                if let Some(_) = node.right_value {
                     if !hit_target {
                         before_index = node_index;
                         before_is_left = false;
@@ -365,13 +375,9 @@ pub fn explode_v2(
                 }
             }
 
-
-
             node_index = nodes[unwrapped_node_index].right_node;
         }
     }
-
-    //println!("Hi Angus");
 
     let left_value = nodes[target_index].left_value.unwrap();
     let right_value = nodes[target_index].right_value.unwrap();
@@ -399,74 +405,80 @@ pub fn explode_v2(
     nodes[parent_index].zero_out_child(target_index);
 }
 
-// pub fn explode(index: usize, nodes: &mut Vec<Node>) {
-//     let start_index = index;
-//     let left_value = nodes[index].left_value.unwrap();
-//     let right_value = nodes[index].right_value.unwrap();
-//
-//     // Explode to the left
-//     let mut current_index: Option<usize> = nodes[index].parent_index;
-//
-//     loop {
-//         let i = current_index.unwrap();
-//
-//         if nodes[i].left_value.is_some() {
-//             nodes[i].increment_left(left_value);
-//             break;
-//         }
-//
-//         current_index = nodes[current_index.unwrap()].parent_index;
-//
-//         if current_index.is_none() {
-//             break
-//         }
-//     }
-//
-//     // Explode to the right
-//     let mut current_index: Option<usize> = nodes[index].parent_index;
-//
-//     loop {
-//         let i = current_index.unwrap();
-//
-//         if nodes[i].right_value.is_some() {
-//             nodes[i].increment_right(right_value);
-//             break;
-//         }
-//
-//         current_index = nodes[current_index.unwrap()].parent_index;
-//
-//         if current_index.is_none() {
-//             break
-//         }
-//     }
-//
-//     // Then, the entire exploding pair is replaced with the regular number 0
-//     let parent_index = nodes[start_index].parent_index.unwrap().clone();
-//     nodes[parent_index].zero_out_child(start_index);
-// }
-
 pub fn part_a(text: String) -> i32 {
-    let mut sailfish_numbers: Vec<Vec<Node>> = text.lines().map(|l| parse(l)).collect();
+    let mut sailfish_numbers: Vec<Vec<Node>> = text.lines()
+        .map(|l| parse(l))
+        .collect();
 
-    for index in 0..sailfish_numbers.len() {
-        let nodes = reduce(&mut sailfish_numbers[index]);
+    let mut sum = sailfish_numbers[0].clone();
+
+    for index in 1..sailfish_numbers.len() {
+        sum = add_number(sum, &sailfish_numbers[index]);
+        let head_index = sum.len() - 1;
+        reduce(&mut sum, head_index);
+
+        let buffer = &mut "".into();
+        render(head_index, &sum, buffer);
+        println!("{}", buffer);
     }
 
     println!("");
     panic!("Not implemented")
-
-    // To explode a pair, the pair's left value is added to the first regular number to the left of the exploding pair
-    // (if any), and the pair's right value is added to the first regular number to the right of the exploding pair
-    // (if any). Exploding pairs will always consist of two regular numbers. Then, the entire exploding pair
-    // is replaced with the regular number 0.
-
-    // To split a regular number, replace it with a pair; the left element of the pair should be the regular number
-    // divided by two and rounded down, while the right element of the pair should be the regular number divided by
-    // two and rounded up. For example, 10 becomes [5,5], 11 becomes [5,6], 12 becomes [6,6], and so on.
-
     // To check whether it's the right answer, the snailfish teacher only checks the magnitude of the final sum.
     // The magnitude of a pair is 3 times the magnitude of its left element plus 2 times the magnitude of its right element.
     // The magnitude of a regular number is just that number.
+}
+
+pub fn add_number(left: Vec<Node>, right: &Vec<Node>) -> Vec<Node> {
+    let mut buffer: Vec<Node> = vec![];
+
+    let left_node = Some(left.len() - 1);
+    let right_node = Some(left.len() + right.len() - 1);
+
+    let head = Node {
+        level: 0,
+        index: Some(left.len() + right.len()),
+        parent_index: None,
+        left_node: left_node,
+        left_value: None,
+        right_node: right_node,
+        right_value: None,
+    };
+
+    for node in left.iter() {
+        let mut node1 = node.clone();
+        node1.set_level(node1.level + 1);
+
+        if node1.parent_index.is_none() {
+            node1.set_parent_index(head.index.unwrap())
+        }
+
+        buffer.push(node1);
+    }
+
+    for node in right.iter() {
+        let mut node1 = node.clone();
+        node1.set_level(node1.level + 1);
+
+        if let Some(parent_index) = node1.parent_index {
+            node1.set_parent_index(parent_index + left.len())
+        }
+        else {
+            node1.set_parent_index(head.index.unwrap())
+        }
+
+        if let Some(index) = node1.left_node {
+            node1.set_left_index(index + left.len())
+        }
+        if let Some(index) = node1.right_node {
+            node1.set_right_index(index + left.len())
+        }
+
+        buffer.push(node1);
+    }
+
+    buffer.push(head);
+    return buffer;
 }
 
 pub fn part_b(_text: String) -> i32 {
@@ -492,18 +504,29 @@ mod tests {
     }
 
     #[test]
-    fn example_part_a() {
-        assert_eq!(part_a("[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
-[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]
-[[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]
-[[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]
-[7,[5,[[3,8],[1,4]]]]
-[[2,[2,2]],[8,[8,1]]]
-[2,9]
-[1,[[[9,3],9],[[9,0],[0,7]]]]
-[[[5,[7,4]],7],1]
-[[[[4,2],2],6],[8,7]]".into()), 3488);
+    fn example_part_a_1() {
+        assert_eq!(part_a("[[[[4,3],4],4],[7,[[8,4],9]]]
+[1,1]".into()), 3488);
     }
+
+    #[test]
+    fn example_part_a_2() {
+        assert_eq!(part_a("[1,1]
+[2,2]
+[3,3]
+[4,4]".into()), 3488);
+    }
+
+    #[test]
+    fn example_part_a_6() {
+        assert_eq!(part_a("[1,1]
+[2,2]
+[3,3]
+[4,4]
+[5,5]".into()), 3488);
+    }
+
+
 
     #[test]
     fn explosion_reducing_examples() {
@@ -511,6 +534,19 @@ mod tests {
         assert_eq!(reduce_and_render("[7,[6,[5,[4,[3,2]]]]]".into()), "[7,[6,[5,[7,0]]]]");
         assert_eq!(reduce_and_render("[[6,[5,[4,[3,2]]]],1]".into()), "[[6,[5,[7,0]]],3]");
         assert_eq!(reduce_and_render("[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]".into()), "[[3,[2,[8,0]]],[9,[5,[7,0]]]]");
+        assert_eq!(reduce_and_render("[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]".into()), "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]");
+    }
+
+    #[test]
+    fn add_examples() {
+        let left = parse("[[[[4,3],4],4],[7,[[8,4],9]]]");
+        let right = parse("[1,1]");
+
+        let added = add_number(left, &right);
+
+        let buffer = &mut "".into();
+        render(added.len() - 1, &added, buffer);
+        assert_eq!(buffer, "[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]");
     }
 
     #[test]
